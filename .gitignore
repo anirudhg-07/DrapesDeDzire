@@ -1,0 +1,7 @@
+.DS_Store
+web/node_modules/
+web/.next/
+web/.env*
+web/prisma_debug.log
+web/tsconfig.tsbuildinfo
+web/src/generated/prisma
