@@ -1,8 +1,16 @@
-"use client";
-
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import EditSectionButton from "../admin/EditSectionButton";
+import Image from "next/image";
 
-export default function FeaturedStory() {
+export default async function FeaturedStory({ isAdmin = false }: { isAdmin?: boolean }) {
+  const storyBanners = await prisma.banner.findMany({
+    where: { type: "FEATURED_STORY", isActive: true },
+    orderBy: { orderNum: "asc" },
+  });
+
+  const featuredImage = storyBanners.length > 0 ? storyBanners[0] : null;
+
   return (
     <section
       id="featured-story"
@@ -10,8 +18,19 @@ export default function FeaturedStory() {
         padding: "var(--section-gap) 0",
         backgroundColor: "var(--color-ivory)",
         overflow: "hidden",
+        position: "relative",
       }}
     >
+      {isAdmin && (
+        <EditSectionButton
+          bannerType="FEATURED_STORY"
+          sectionName="Featured Story"
+          recommendedSize="800x1000px (4:5 Portrait)"
+          top="20px"
+          right="20px"
+        />
+      )}
+
       <div className="section-container">
         <div
           style={{
@@ -37,24 +56,33 @@ export default function FeaturedStory() {
                 overflow: "hidden",
               }}
             >
-              {/* Pattern overlay */}
-              <div
-                aria-hidden
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  backgroundImage:
-                    "repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(212,175,55,0.04) 12px, rgba(212,175,55,0.04) 13px)",
-                }}
-              />
+              {featuredImage ? (
+                <>
+                  <Image src={featuredImage.imageUrl} alt={featuredImage.title || "Featured Story"} fill style={{ objectFit: "cover" }} />
+                  {/* Subtle overlay */}
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(74,14,23,0.8), transparent)" }} />
+                </>
+              ) : (
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(212,175,55,0.04) 12px, rgba(212,175,55,0.04) 13px)",
+                  }}
+                />
+              )}
+
               <div style={{ textAlign: "center", padding: "2rem", position: "relative", zIndex: 1 }}>
                 <div
                   style={{
                     fontSize: "4rem",
                     fontFamily: "var(--font-serif)",
-                    color: "rgba(212,175,55,0.15)",
+                    color: "rgba(212,175,55,0.85)",
                     lineHeight: 1,
                     marginBottom: "1rem",
+                    textShadow: "0 2px 4px rgba(0,0,0,0.5)",
                   }}
                 >
                   ✦
@@ -67,6 +95,7 @@ export default function FeaturedStory() {
                     fontWeight: 600,
                     lineHeight: 1.3,
                     fontStyle: "italic",
+                    textShadow: "0 2px 4px rgba(0,0,0,0.5)",
                   }}
                 >
                   &quot;Where tradition meets timeless beauty&quot;
@@ -82,10 +111,11 @@ export default function FeaturedStory() {
                 <p
                   style={{
                     fontSize: "0.875rem",
-                    color: "rgba(212,175,55,0.7)",
+                    color: "var(--color-gold)",
                     letterSpacing: "0.12em",
                     textTransform: "uppercase",
                     fontFamily: "var(--font-sans)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.5)",
                   }}
                 >
                   Drapes De Dzire

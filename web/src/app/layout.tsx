@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { CartProvider } from "@/components/cart/CartContext";
 import CartDrawer from "@/components/cart/CartDrawer";
+import { isAdmin } from "@/lib/auth";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -80,11 +81,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const adminMode = await isAdmin();
+
   return (
     <ClerkProvider>
       <html
@@ -98,6 +101,26 @@ export default function RootLayout({
             fontFamily: "var(--font-sans)",
           }}
         >
+          {adminMode && (
+            <div
+              style={{
+                background: "linear-gradient(90deg, #1a0a0e 0%, #4A0E17 40%, #1a0a0e 100%)",
+                color: "#D4AF37",
+                textAlign: "center",
+                padding: "8px 16px",
+                fontSize: "0.72rem",
+                fontWeight: 600,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                fontFamily: "var(--font-sans)",
+                zIndex: 1000,
+                position: "relative",
+                borderBottom: "1px solid rgba(212,175,55,0.3)",
+              }}
+            >
+              ✦ Admin Mode Active — Directly Edit Prices, Stock &amp; Products Inline ✦
+            </div>
+          )}
           <CartProvider>
             <Navbar />
             <CartDrawer />

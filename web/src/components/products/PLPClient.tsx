@@ -7,16 +7,18 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Filter, SlidersHorizontal, X, Heart } from "lucide-react";
+import { Filter, SlidersHorizontal, X, Heart, PlusCircle, Pencil } from "lucide-react";
 import { Product, Category } from "@/lib/catalog";
 import { useAuth } from "@clerk/nextjs";
 import { toggleWishlistAction, getWishlistAction } from "@/actions/wishlist";
+import AddSareeDrawer from "@/components/admin/AddSareeDrawer";
 
 interface PLPClientProps {
   initialProducts: Product[];
   categories: Category[];
   categoryTitle?: string;
   categoryDescription?: string;
+  isAdmin?: boolean;
 }
 
 const FABRICS = ["Kanchipuram Silk", "Banarasi Silk", "Chanderi", "Georgette", "Organza"];
@@ -28,6 +30,7 @@ export default function PLPClient({
   categories: _categories,
   categoryTitle = "Exquisite Collections",
   categoryDescription = "Browse through our curated showroom of handloom masterpieces, handwoven by India's finest master weavers.",
+  isAdmin = false,
 }: PLPClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -50,6 +53,7 @@ export default function PLPClient({
   const { isSignedIn } = useAuth();
   const [wishlistedIds, setWishlistedIds] = useState<Set<string>>(new Set());
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [addDrawerOpen, setAddDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -474,6 +478,40 @@ export default function PLPClient({
                 gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
                 gap: "2rem"
               }}>
+                {/* Admin: Add New Saree card */}
+                {isAdmin && (
+                  <div
+                    onClick={() => setAddDrawerOpen(true)}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "var(--color-cream)",
+                      border: "2px dashed rgba(212,175,55,0.5)",
+                      borderRadius: "2px",
+                      aspectRatio: "3/4",
+                      cursor: "pointer",
+                      gap: "0.75rem",
+                      transition: "all 0.25s ease",
+                      color: "#9a7a50",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#D4AF37";
+                      e.currentTarget.style.background = "rgba(212,175,55,0.06)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(212,175,55,0.5)";
+                      e.currentTarget.style.background = "var(--color-cream)";
+                    }}
+                  >
+                    <PlusCircle size={40} style={{ color: "#D4AF37" }} />
+                    <span style={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                      Add New Saree
+                    </span>
+                    <span style={{ fontSize: "0.72rem", color: "#b0a090" }}>Click to open upload form</span>
+                  </div>
+                )}
                 {initialProducts.map((product) => {
                   const primaryImg = product.images.find(img => img.isPrimary) || product.images[0];
                   
@@ -542,7 +580,7 @@ export default function PLPClient({
                         }}>
                           {product.fabric}
                         </div>
-                        {/* Wishlist Heart Icon */}
+                      {/* Wishlist Heart Icon */}
                         <button
                           onClick={(e) => handleWishlistToggle(e, product.id)}
                           disabled={togglingId === product.id}
@@ -579,6 +617,35 @@ export default function PLPClient({
                             fill={wishlistedIds.has(product.id) ? "var(--color-maroon)" : "none"}
                           />
                         </button>
+                        {/* Admin Edit Button */}
+                        {isAdmin && (
+                          <Link
+                            href={`/products/${product.id}?adminEdit=1`}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              position: "absolute",
+                              bottom: "0.75rem",
+                              right: "0.75rem",
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              backgroundColor: "rgba(212,175,55,0.92)",
+                              border: "none",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              zIndex: 10,
+                              color: "#1a0a0e",
+                              boxShadow: "0 2px 8px rgba(74,14,23,0.2)",
+                              textDecoration: "none",
+                            }}
+                            title="Edit this saree"
+                          >
+                            <Pencil size={15} />
+                          </Link>
+                        )}
                       </div>
 
                       {/* Detail Frame */}
@@ -800,6 +867,15 @@ export default function PLPClient({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Admin: Add Saree Drawer */}
+      {isAdmin && (
+        <AddSareeDrawer
+          isOpen={addDrawerOpen}
+          onClose={() => setAddDrawerOpen(false)}
+          onCreated={() => router.refresh()}
+        />
       )}
 
       {/* Group Hover Scale Styling helper */}

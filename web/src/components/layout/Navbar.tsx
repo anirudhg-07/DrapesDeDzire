@@ -264,9 +264,7 @@ export default function Navbar() {
               <img
                 src="/logo.png"
                 alt="Drapes De Dzire"
-                width={80}
-                height={80}
-                style={{ objectFit: "contain" }}
+                style={{ height: "60px", width: "auto", objectFit: "contain" }}
               />
             </Link>
 

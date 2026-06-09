@@ -4,8 +4,8 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "./prisma";
 
 export async function getOrCreateDbUser(clerkId: string): Promise<string> {
-  // 1. Try to find the user in the database
-  const existing = await prisma.user.findUnique({
+  // 1. Try to find the user in the database by clerkId
+  const existing = await prisma.user.findFirst({
     where: { clerkId },
     select: { id: true },
   });
@@ -27,7 +27,22 @@ export async function getOrCreateDbUser(clerkId: string): Promise<string> {
 
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
 
-  // Create user record in PostgreSQL
+  // 3. Check if a user with this email already exists (e.g. if Clerk keys changed but DB wasn't wiped)
+  const existingByEmail = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+
+  if (existingByEmail) {
+    // Update the existing user with the new clerkId
+    await prisma.user.update({
+      where: { email },
+      data: { clerkId, fullName },
+    });
+    return existingByEmail.id;
+  }
+
+  // 4. Create user record in PostgreSQL
   const created = await prisma.user.create({
     data: {
       clerkId,

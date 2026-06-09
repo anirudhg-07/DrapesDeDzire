@@ -6,14 +6,7 @@ import { prisma, isDbConfigured } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import type { CartItemWithProduct } from "@/types/cart";
 
-async function getDbUserId(clerkId: string): Promise<string | null> {
-  try {
-    return await getOrCreateDbUser(clerkId);
-  } catch (err) {
-    console.error("getDbUserId error:", err);
-    return null;
-  }
-}
+// Removed getDbUserId wrapper to allow errors to propagate directly
 
 // --------------------------------------------------------------------------
 // Add to Cart (upsert — creates row or increments quantity)
@@ -28,10 +21,7 @@ export async function addToCartAction(
 
   try {
     const clerkId = await requireAuth();
-    const userId = await getDbUserId(clerkId);
-    if (!userId) {
-      return { success: false, error: "User not found. Please sign out and sign in again." };
-    }
+    const userId = await getOrCreateDbUser(clerkId);
 
     // Check stock availability
     const product = await prisma.product.findUnique({
@@ -81,8 +71,7 @@ export async function removeFromCartAction(
 
   try {
     const clerkId = await requireAuth();
-    const userId = await getDbUserId(clerkId);
-    if (!userId) return { success: false, error: "User not found." };
+    const userId = await getOrCreateDbUser(clerkId);
 
     await prisma.cartItem.deleteMany({
       where: { userId, productId },
@@ -108,8 +97,7 @@ export async function updateCartQuantityAction(
 
   try {
     const clerkId = await requireAuth();
-    const userId = await getDbUserId(clerkId);
-    if (!userId) return { success: false, error: "User not found." };
+    const userId = await getOrCreateDbUser(clerkId);
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -147,8 +135,7 @@ export async function getCartAction(): Promise<{
 
   try {
     const clerkId = await requireAuth();
-    const userId = await getDbUserId(clerkId);
-    if (!userId) return empty;
+    const userId = await getOrCreateDbUser(clerkId);
 
     const rawItems = await prisma.cartItem.findMany({
       where: { userId },
@@ -207,8 +194,7 @@ export async function clearCartAction(): Promise<{ success: boolean; error?: str
 
   try {
     const clerkId = await requireAuth();
-    const userId = await getDbUserId(clerkId);
-    if (!userId) return { success: false, error: "User not found." };
+    const userId = await getOrCreateDbUser(clerkId);
 
     await prisma.cartItem.deleteMany({ where: { userId } });
     revalidatePath("/cart");

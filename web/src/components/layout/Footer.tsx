@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Mail, MapPin } from "lucide-react";
 
 const footerCollections = [
@@ -46,12 +45,10 @@ export default function Footer() {
           {/* Brand column */}
           <div style={{ gridColumn: "span 1" }}>
             <Link href="/" style={{ display: "inline-block", marginBottom: "1.25rem" }}>
-              <Image
+              <img
                 src="/logo.png"
                 alt="Drapes De Dzire"
-                width={80}
-                height={80}
-                style={{ objectFit: "contain", filter: "brightness(0) invert(1)" }}
+                style={{ height: "60px", width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }}
               />
             </Link>
             <p

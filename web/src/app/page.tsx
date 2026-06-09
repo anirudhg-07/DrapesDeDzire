@@ -14,15 +14,26 @@ export const metadata: Metadata = {
     "Discover India's finest handwoven sarees. Kanchipuram Silk, Banarasi Silk, Bridal & Designer sarees — crafted by master artisans. Pan-India delivery.",
 };
 
-export default function HomePage() {
+import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/auth";
+
+export default async function HomePage() {
+  const adminMode = await isAdmin();
+  
+  // Fetch Hero Banners
+  const heroBanners = await prisma.banner.findMany({
+    where: { type: "HERO", isActive: true },
+    orderBy: { orderNum: "asc" },
+  });
+
   return (
     <>
-      <HeroSection />
+      <HeroSection initialBanners={heroBanners} isAdmin={adminMode} />
       <CollectionsGrid />
-      <FeaturedStory />
+      <FeaturedStory isAdmin={adminMode} />
       <NewArrivals />
       <WhyChooseUs />
-      <InstagramStrip />
+      <InstagramStrip isAdmin={adminMode} />
     </>
   );
 }

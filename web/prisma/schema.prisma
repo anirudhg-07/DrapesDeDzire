@@ -281,6 +281,10 @@ enum BannerType {
   HERO
   FESTIVAL
   PROMOTIONAL
+  FEATURED_STORY
+  COLLECTION_CARD
+  INSTAGRAM_POST
+  WHY_CHOOSE_US
 }
 
 model Banner {
@@ -289,6 +293,9 @@ model Banner {
   publicId    String     // Cloudinary ID
   title       String?
   subtitle    String?
+  description String?    @db.Text
+  ctaText     String?
+  accentColor String?
   redirectUrl String?    // Direct click redirection
   type        BannerType @default(HERO)
   isActive    Boolean    @default(true)

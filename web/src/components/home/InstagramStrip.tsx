@@ -1,24 +1,42 @@
-"use client";
+import { prisma } from "@/lib/prisma";
+import EditSectionButton from "../admin/EditSectionButton";
 
-// Placeholder Instagram strip — will be connected to Instagram API or Cloudinary gallery in a later phase
-const instagramPosts = [
-  { id: "1", color: "#4A0E17", accent: "#D4AF37", caption: "Kanchipuram Dreams ✨" },
-  { id: "2", color: "#3D2314", accent: "#E2C456", caption: "Banarasi Royalty 👑" },
-  { id: "3", color: "#8C1A29", accent: "#D4AF37", caption: "Bridal Ready 💍" },
-  { id: "4", color: "#2A0810", accent: "#E2C456", caption: "Pure Elegance 🌸" },
-  { id: "5", color: "#5C3825", accent: "#D4AF37", caption: "Chanderi Magic ✦" },
-  { id: "6", color: "#4A0E17", accent: "#E2C456", caption: "Heritage Weaves 🪡" },
-];
+export default async function InstagramStrip({ isAdmin = false }: { isAdmin?: boolean }) {
+  // Fetch instagram posts from CMS
+  const dbPosts = await prisma.banner.findMany({
+    where: { type: "INSTAGRAM_POST", isActive: true },
+    orderBy: { orderNum: "asc" },
+  });
 
-export default function InstagramStrip() {
+  // Fallback posts if none exist
+  const instagramPosts = dbPosts.length > 0 ? dbPosts : [
+    { id: "1", color: "#4A0E17", title: "Kanchipuram Dreams ✨" },
+    { id: "2", color: "#3D2314", title: "Banarasi Royalty 👑" },
+    { id: "3", color: "#8C1A29", title: "Bridal Ready 💍" },
+    { id: "4", color: "#2A0810", title: "Pure Elegance 🌸" },
+    { id: "5", color: "#5C3825", title: "Chanderi Magic ✦" },
+    { id: "6", color: "#4A0E17", title: "Heritage Weaves 🪡" },
+  ];
+
   return (
     <section
       id="instagram-strip"
       style={{
         backgroundColor: "var(--color-cream)",
         padding: "var(--section-gap) 0",
+        position: "relative",
       }}
     >
+      {isAdmin && (
+        <EditSectionButton
+          bannerType="INSTAGRAM_POST"
+          sectionName="Instagram"
+          recommendedSize="600x600px (1:1 Square)"
+          top="20px"
+          right="20px"
+        />
+      )}
+
       <div className="section-container">
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
@@ -56,10 +74,10 @@ export default function InstagramStrip() {
             gap: "0.5rem",
           }}
         >
-          {instagramPosts.map((post) => (
+          {instagramPosts.map((post: { id: string; color?: string; title?: string | null; imageUrl?: string; redirectUrl?: string | null; caption?: string }) => (
             <a
               key={post.id}
-              href="https://www.instagram.com/drapes_de_dzire?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+              href={post.redirectUrl || "https://www.instagram.com/drapes_de_dzire?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="}
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "block", textDecoration: "none" }}
@@ -67,54 +85,52 @@ export default function InstagramStrip() {
               <div
                 style={{
                   aspectRatio: "1",
-                  background: `linear-gradient(145deg, ${post.color} 0%, ${post.color}cc 100%)`,
+                  background: post.imageUrl 
+                    ? `url(${post.imageUrl}) center/cover no-repeat` 
+                    : `linear-gradient(145deg, ${post.color} 0%, ${post.color}cc 100%)`,
                   borderRadius: "4px",
                   overflow: "hidden",
                   position: "relative",
                   cursor: "pointer",
                   transition: "transform 0.3s ease",
                 }}
-                onMouseEnter={(e) => {
-                  const overlay = (e.currentTarget as HTMLElement).querySelector(".ig-overlay") as HTMLElement;
-                  if (overlay) overlay.style.opacity = "1";
-                  (e.currentTarget as HTMLElement).style.transform = "scale(1.02)";
-                }}
-                onMouseLeave={(e) => {
-                  const overlay = (e.currentTarget as HTMLElement).querySelector(".ig-overlay") as HTMLElement;
-                  if (overlay) overlay.style.opacity = "0";
-                  (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-                }}
+                className="ig-card-wrapper"
               >
-                {/* Decorative pattern */}
-                <div
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    backgroundImage:
-                      "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(212,175,55,0.06) 10px, rgba(212,175,55,0.06) 11px)",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <span
+                {/* Decorative pattern for fallbacks */}
+                {!post.imageUrl && (
+                  <div
+                    aria-hidden
                     style={{
-                      fontSize: "2rem",
-                      color: post.accent,
-                      opacity: 0.15,
-                      fontFamily: "var(--font-serif)",
+                      position: "absolute",
+                      inset: 0,
+                      backgroundImage:
+                        "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(212,175,55,0.06) 10px, rgba(212,175,55,0.06) 11px)",
+                    }}
+                  />
+                )}
+                
+                {!post.imageUrl && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    ✦
-                  </span>
-                </div>
+                    <span
+                      style={{
+                        fontSize: "2rem",
+                        color: "#D4AF37",
+                        opacity: 0.15,
+                        fontFamily: "var(--font-serif)",
+                      }}
+                    >
+                      ✦
+                    </span>
+                  </div>
+                )}
 
                 {/* Hover overlay */}
                 <div
@@ -140,13 +156,23 @@ export default function InstagramStrip() {
                       lineHeight: 1.4,
                     }}
                   >
-                    {post.caption}
+                    {post.title || post.caption || "View on Instagram"}
                   </p>
                 </div>
               </div>
             </a>
           ))}
         </div>
+
+        {/* Global style for hover state since it's a Server Component */}
+        <style>{`
+          .ig-card-wrapper:hover .ig-overlay {
+            opacity: 1 !important;
+          }
+          .ig-card-wrapper:hover {
+            transform: scale(1.02);
+          }
+        `}</style>
 
         {/* CTA */}
         <div style={{ textAlign: "center", marginTop: "2rem" }}>

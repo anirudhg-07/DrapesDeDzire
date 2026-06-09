@@ -1,6 +1,7 @@
 // src/app/products/page.tsx
 import { getProducts, getCategories } from "@/lib/db-catalog";
 import PLPClient from "@/components/products/PLPClient";
+import { isAdmin } from "@/lib/auth";
 
 interface PageProps {
   searchParams: Promise<{
@@ -25,9 +26,10 @@ export default async function ProductsSearchPage({ searchParams }: PageProps) {
   const priceMax = resolvedSearchParams.priceMax ? Number(resolvedSearchParams.priceMax) : undefined;
   const sort = resolvedSearchParams.sort || "newest";
 
-  const [products, categories] = await Promise.all([
+  const [products, categories, adminMode] = await Promise.all([
     getProducts({ search, fabrics, colours, occasions, priceMin, priceMax, sort }),
     getCategories(),
+    isAdmin(),
   ]);
 
   const title = search ? `Search Results for "${search}"` : "All Sarees";
@@ -41,9 +43,11 @@ export default async function ProductsSearchPage({ searchParams }: PageProps) {
       categories={categories}
       categoryTitle={title}
       categoryDescription={desc}
+      isAdmin={adminMode}
     />
   );
 }
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
