@@ -112,8 +112,8 @@
   |                            |   Ref: DRP-KNC-089
   |    [ PRIMARY IMAGE ]       |   Rs. 32,500  (Inclusive of all taxes)
   |                            |   
-  |    * Hover to Zoom *       |   Select Blouse Stitching Option:
-  |                            |   [x] Unstitched fabric (Included)  [ ] Semi-Stitched (+Rs.1,500)
+  |    * Hover to Zoom *       |   
+  |                            |   
   |                            |   
   +----------------------------+   [ ADD TO CART ]  [ BUY NOW ]  [♥ Add to Wishlist]
    [t1] [t2] [t3] [t4] (Thumbs)
