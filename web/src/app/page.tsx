@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/auth";
+import AdminHomeActions from "@/components/admin/AdminHomeActions";
 
 export default async function HomePage() {
   const adminMode = await isAdmin();
@@ -28,6 +29,7 @@ export default async function HomePage() {
 
   return (
     <>
+      {adminMode && <AdminHomeActions />}
       <HeroSection initialBanners={heroBanners} isAdmin={adminMode} />
       <CollectionsGrid />
       <FeaturedStory isAdmin={adminMode} />

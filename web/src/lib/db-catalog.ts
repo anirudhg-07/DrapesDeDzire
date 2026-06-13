@@ -23,6 +23,7 @@ const mapPrismaProduct = (p: any): Product => {
     isActive: p.isActive,
     categoryId: p.categoryId,
     categorySlug: p.category?.slug,
+    variantGroupId: p.variantGroupId,
     images: (p.images || []).map((img: any) => ({
       id: img.id,
       productId: img.productId,
@@ -340,3 +341,26 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
       (p.categoryId === currentProduct.categoryId || p.fabric === currentProduct.fabric)
   ).slice(0, limit);
 }
+
+export async function getProductVariants(groupId: string): Promise<Product[]> {
+  if (!groupId) return [];
+
+  if (isDbConfigured()) {
+    try {
+      await ensureSeeded();
+      const dbProducts = await prisma.product.findMany({
+        where: { variantGroupId: groupId, isActive: true },
+        include: {
+          images: { orderBy: { orderNum: "asc" } },
+          category: true,
+        },
+        orderBy: { createdAt: "asc" },
+      });
+      if (dbProducts.length > 0) return dbProducts.map(mapPrismaProduct);
+    } catch (err) {
+      console.warn("Prisma Product Variants query failed:", err);
+    }
+  }
+  return [];
+}
+

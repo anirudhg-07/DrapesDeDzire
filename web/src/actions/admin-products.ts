@@ -88,6 +88,7 @@ export async function createProductAction(data: {
   careInstructions: string;
   deliveryInfo?: string;
   returnPolicy?: string;
+  variantGroupId?: string;
   images: Array<{ url: string; publicId: string; isPrimary: boolean }>;
 }): Promise<{ success: boolean; productId?: string; error?: string }> {
   if (!isDbConfigured()) return { success: false, error: "Database not configured." };
@@ -100,7 +101,7 @@ export async function createProductAction(data: {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "")
-      + "-" + Date.now();
+      + "-" + Date.now() + Math.floor(Math.random() * 1000);
 
     // Auto-seed category based on fabric/occasion
     const categoryName = data.occasion === "Bridal"
@@ -136,6 +137,7 @@ export async function createProductAction(data: {
         returnPolicy: data.returnPolicy || null,
         isActive: true,
         categoryId: category.id,
+        variantGroupId: data.variantGroupId || null,
         images: {
           create: data.images.map((img, idx) => ({
             imageUrl: img.url,

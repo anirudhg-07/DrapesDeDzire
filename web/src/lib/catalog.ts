@@ -27,6 +27,7 @@ export interface Product {
   isActive: boolean;
   categoryId: string;
   categorySlug?: string;
+  variantGroupId?: string | null;
   images: ProductImage[];
 }
 

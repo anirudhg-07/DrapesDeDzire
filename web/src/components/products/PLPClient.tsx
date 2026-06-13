@@ -658,7 +658,7 @@ export default function PLPClient({
                           letterSpacing: "0.05em",
                           marginBottom: "0.375rem"
                         }}>
-                          {product.colour} &middot; {product.occasion}
+                          {product.colour.includes(":") ? product.colour.split(":")[1] : product.colour} &middot; {product.occasion}
                         </span>
                         
                         <Link href={`/products/${product.id}`} style={{ textDecoration: "none" }}>

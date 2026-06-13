@@ -6,7 +6,7 @@ const features = [
   {
     icon: Award,
     title: "Authenticity Guaranteed",
-    body: "Every saree is sourced directly from certified master weavers. We provide a certificate of authenticity with each purchase.",
+    body: "Every piece is sourced directly from certified master weavers and creators. We provide a certificate of authenticity with each purchase.",
     num: "01",
   },
   {
@@ -30,13 +30,13 @@ const features = [
   {
     icon: Camera,
     title: "True-to-Life Photos",
-    body: "Every saree is photographed under natural light to ensure colours are accurately represented.",
+    body: "Every product is photographed under natural light to ensure colours are accurately represented.",
     num: "05",
   },
   {
     icon: HeartHandshake,
     title: "Personalised Assistance",
-    body: "Our saree experts are available to help you choose the perfect piece for any occasion.",
+    body: "Our style experts are available to help you choose the perfect piece for any occasion.",
     num: "06",
   },
 ];

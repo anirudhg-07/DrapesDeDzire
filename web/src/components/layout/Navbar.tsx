@@ -12,13 +12,34 @@ import {
 import { Search, Heart, ShoppingBag, Menu, X, ChevronDown } from "lucide-react";
 import { useCart } from "@/components/cart/CartContext";
 
-const collections = [
-  { name: "Kanchipuram Silk", href: "/collections/kanchipuram-silk" },
-  { name: "Banarasi Silk", href: "/collections/banarasi-silk" },
-  { name: "Chanderi", href: "/collections/chanderi" },
-  { name: "Georgette", href: "/collections/georgette" },
-  { name: "Bridal", href: "/collections/bridal" },
-  { name: "Designer", href: "/collections/designer" },
+const categories = [
+  {
+    title: "Sarees",
+    links: [
+      { name: "Kanchipuram Silk", href: "/collections/kanchipuram-silk" },
+      { name: "Banarasi Silk", href: "/collections/banarasi-silk" },
+      { name: "Chanderi", href: "/collections/chanderi" },
+      { name: "Georgette", href: "/collections/georgette" },
+      { name: "Bridal", href: "/collections/bridal" },
+      { name: "Designer", href: "/collections/designer" },
+    ],
+  },
+  {
+    title: "Kurta Sets",
+    links: [
+      { name: "Anarkali", href: "/collections/anarkali" },
+      { name: "Straight Cut", href: "/collections/straight-cut" },
+      { name: "Sharara", href: "/collections/sharara" },
+    ],
+  },
+  {
+    title: "Jewellery",
+    links: [
+      { name: "Necklaces", href: "/collections/necklaces" },
+      { name: "Bangles", href: "/collections/bangles" },
+      { name: "Earrings", href: "/collections/earrings" },
+    ],
+  },
 ];
 
 export default function Navbar() {
@@ -162,49 +183,65 @@ export default function Navbar() {
                       animation: "fade-in 0.15s ease",
                     }}
                   >
-                    {collections.map((col) => (
-                      <Link
-                        key={col.href}
-                        href={col.href}
-                        style={{
-                          display: "block",
-                          padding: "0.625rem 1.25rem",
-                          fontSize: "0.8125rem",
-                          color: "var(--color-brown)",
-                          transition: "all 0.15s ease",
-                          fontFamily: "var(--font-sans)",
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.target as HTMLElement).style.backgroundColor =
-                            "var(--color-cream)";
-                          (e.target as HTMLElement).style.color =
-                            "var(--color-maroon)";
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.target as HTMLElement).style.backgroundColor =
-                            "transparent";
-                          (e.target as HTMLElement).style.color =
-                            "var(--color-brown)";
-                        }}
-                      >
-                        {col.name}
-                      </Link>
-                    ))}
+                    <div style={{ display: "flex", padding: "1rem" }}>
+                      {categories.map((category) => (
+                        <div key={category.title} style={{ minWidth: "160px" }}>
+                          <p style={{
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.1em",
+                            textTransform: "uppercase",
+                            color: "var(--color-maroon)",
+                            padding: "0.5rem 1rem",
+                            margin: 0,
+                          }}>
+                            {category.title}
+                          </p>
+                          {category.links.map((link) => (
+                            <Link
+                              key={link.href}
+                              href={link.href}
+                              style={{
+                                display: "block",
+                                padding: "0.5rem 1rem",
+                                fontSize: "0.85rem",
+                                color: "var(--color-brown)",
+                                transition: "all 0.15s ease",
+                                fontFamily: "var(--font-sans)",
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.target as HTMLElement).style.backgroundColor = "var(--color-cream)";
+                                (e.target as HTMLElement).style.color = "var(--color-maroon)";
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.target as HTMLElement).style.backgroundColor = "transparent";
+                                (e.target as HTMLElement).style.color = "var(--color-brown)";
+                              }}
+                            >
+                              {link.name}
+                            </Link>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                     <div
                       style={{
                         borderTop: "1px solid var(--color-cream-200)",
-                        margin: "0.5rem 0",
                       }}
                     />
                     <Link
                       href="/collections"
                       style={{
                         display: "block",
-                        padding: "0.625rem 1.25rem",
-                        fontSize: "0.8125rem",
+                        padding: "0.875rem 1.25rem",
+                        fontSize: "0.85rem",
                         fontWeight: 600,
+                        textAlign: "center",
                         color: "var(--color-gold-600)",
                         fontFamily: "var(--font-sans)",
+                        backgroundColor: "var(--color-ivory)",
+                        borderBottomLeftRadius: "4px",
+                        borderBottomRightRadius: "4px",
                       }}
                     >
                       View All Collections →
@@ -476,7 +513,7 @@ export default function Navbar() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search sarees — Kanchipuram, Banarasi, Bridal…"
+                  placeholder="Search sarees, kurta sets, jewellery…"
                   style={{
                     flex: 1,
                     padding: "0.75rem 1rem",
@@ -528,21 +565,38 @@ export default function Navbar() {
                 >
                   Collections
                 </p>
-                {collections.map((col) => (
-                  <Link
-                    key={col.href}
-                    href={col.href}
-                    style={{
-                      padding: "0.625rem 0",
-                      fontSize: "0.9375rem",
-                      color: "var(--color-brown)",
-                      borderBottom: "1px solid var(--color-cream-200)",
-                      fontFamily: "var(--font-sans)",
-                    }}
-                  >
-                    {col.name}
-                  </Link>
+                {categories.map((category) => (
+                  <div key={category.title} style={{ marginBottom: "0.5rem" }}>
+                    <p
+                      style={{
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        color: "var(--color-maroon)",
+                        padding: "0.5rem 0",
+                        fontFamily: "var(--font-sans)",
+                      }}
+                    >
+                      {category.title}
+                    </p>
+                    {category.links.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        style={{
+                          display: "block",
+                          padding: "0.5rem 0",
+                          fontSize: "0.9375rem",
+                          color: "var(--color-brown)",
+                          fontFamily: "var(--font-sans)",
+                          paddingLeft: "1rem",
+                        }}
+                      >
+                        {link.name}
+                      </Link>
+                    ))}
+                  </div>
                 ))}
+                <div style={{ borderTop: "1px solid var(--color-cream-200)", margin: "0.5rem 0" }} />
                 <Link
                   href="/products?sort=newest"
                   style={{
