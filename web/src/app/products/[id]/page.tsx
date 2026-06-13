@@ -1,6 +1,6 @@
 // src/app/products/[id]/page.tsx
 import { notFound } from "next/navigation";
-import { getProductById, getRelatedProducts } from "@/lib/db-catalog";
+import { getProductById, getRelatedProducts, getProductVariants } from "@/lib/db-catalog";
 import PDPClient from "@/components/products/PDPClient";
 import { isAdmin } from "@/lib/auth";
 import type { Metadata } from "next";
@@ -43,8 +43,11 @@ export default async function ProductDetailsPage({ params }: PageProps) {
   }
 
   const relatedProducts = await getRelatedProducts(resolvedParams.id);
+  const variants = product.variantGroupId 
+    ? await getProductVariants(product.variantGroupId) 
+    : [];
 
-  return <PDPClient product={product} relatedProducts={relatedProducts} isAdmin={adminMode} />;
+  return <PDPClient product={product} relatedProducts={relatedProducts} variants={variants} isAdmin={adminMode} />;
 }
 
 export const dynamic = "force-dynamic";

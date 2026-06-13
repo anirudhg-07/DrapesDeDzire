@@ -202,7 +202,7 @@ export default async function FeaturedStory({ isAdmin = false }: { isAdmin?: boo
                 fontFamily: "var(--font-sans)",
               }}
             >
-              At Drapes De Dzire, we believe that a saree is more than fabric —
+              At Drapes De Dzire, we believe that every piece is more than fabric or metal —
               it is a living artwork, a cultural heirloom, and a statement of
               grace passed down through generations.
             </p>
@@ -216,7 +216,7 @@ export default async function FeaturedStory({ isAdmin = false }: { isAdmin?: boo
               }}
             >
               We work directly with master weavers from Kanchipuram, Varanasi,
-              and Chanderi — ensuring every piece you receive carries the
+              and Chanderi, alongside expert jewellery artisans — ensuring every piece you receive carries the
               authentic touch of artisanal excellence. No middlemen.
               No compromises.
             </p>

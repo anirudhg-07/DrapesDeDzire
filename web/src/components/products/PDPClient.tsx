@@ -20,10 +20,11 @@ const COLOURS = ["Deep Crimson", "Royal Blue", "Forest Green", "Mustard Gold", "
 interface PDPClientProps {
   product: Product;
   relatedProducts: Product[];
+  variants?: Product[];
   isAdmin?: boolean;
 }
 
-export default function PDPClient({ product, relatedProducts, isAdmin = false }: PDPClientProps) {
+export default function PDPClient({ product, relatedProducts, variants = [], isAdmin = false }: PDPClientProps) {
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -359,6 +360,45 @@ export default function PDPClient({ product, relatedProducts, isAdmin = false }:
                 </span>
               )}
 
+              {/* Color Rings (Variants) */}
+              {!isEditing && variants.length > 1 && (
+                <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "1rem" }}>
+                  <span style={{ fontSize: "0.85rem", color: "var(--color-brown-500)", fontWeight: 600 }}>Color:</span>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    {variants.map(v => {
+                      const isActive = v.id === product.id;
+                      const hexCode = v.colour.includes(":") ? v.colour.split(":")[0] : "#cccccc";
+                      const colorName = v.colour.includes(":") ? v.colour.split(":")[1] : v.colour;
+                      
+                      return (
+                        <Link 
+                          key={v.id} 
+                          href={`/products/${v.id}`}
+                          title={colorName}
+                          style={{
+                            width: "28px", 
+                            height: "28px", 
+                            borderRadius: "50%", 
+                            backgroundColor: hexCode,
+                            border: isActive ? "2px solid var(--color-brown)" : "1px solid rgba(0,0,0,0.1)",
+                            outline: isActive ? "2px solid #fff" : "none",
+                            outlineOffset: "-4px",
+                            cursor: isActive ? "default" : "pointer",
+                            boxShadow: isActive ? "0 0 0 2px var(--color-gold)" : "none",
+                            transition: "transform 0.2s"
+                          }}
+                          onMouseEnter={(e) => { if(!isActive) e.currentTarget.style.transform = "scale(1.1)"; }}
+                          onMouseLeave={(e) => { if(!isActive) e.currentTarget.style.transform = "scale(1)"; }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span style={{ fontSize: "0.85rem", color: "var(--color-brown-300)" }}>
+                    {product.colour.includes(":") ? product.colour.split(":")[1] : product.colour}
+                  </span>
+                </div>
+              )}
+
               {/* Name */}
               {isEditing ? (
                 <input
@@ -612,7 +652,7 @@ export default function PDPClient({ product, relatedProducts, isAdmin = false }:
                 {[
                   { label: "Fabric Blend", value: product.fabric },
                   { label: "Weaving Craft", value: "Handloom Jacquard" },
-                  { label: "Colour Shade", value: product.colour },
+                  { label: "Colour Shade", value: product.colour.includes(":") ? product.colour.split(":")[1] : product.colour },
                   { label: "Occasion Fit", value: product.occasion },
                   { label: "Saree Length", value: "5.5 meters" },
                   { label: "Blouse Piece", value: "Included (0.8 meters, contrasting design)" },

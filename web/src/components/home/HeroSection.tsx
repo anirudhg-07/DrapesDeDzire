@@ -23,8 +23,8 @@ export default function HeroSection({ initialBanners = [], isAdmin = false }: He
     id: 'fallback',
     imageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6153c?auto=format&fit=crop&w=1920&q=80',
     title: 'Heritage in Every Thread',
-    subtitle: 'Kanchipuram Silk',
-    description: 'Centuries of craftsmanship, woven into timeless elegance. Discover our curated collection of authentic handwoven silk sarees.',
+    subtitle: 'Sarees · Kurta Sets · Jewellery',
+    description: 'Centuries of craftsmanship, woven into timeless elegance. Discover our curated collection of authentic silk sarees, elegant kurta sets, and premium jewellery.',
     ctaText: 'Explore Collection',
     redirectUrl: '/collections',
     accentColor: '#D4AF37'
