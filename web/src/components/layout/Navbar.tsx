@@ -264,7 +264,7 @@ export default function Navbar() {
               <img
                 src="/logo.png"
                 alt="Drapes De Dzire"
-                style={{ height: "60px", width: "auto", objectFit: "contain" }}
+                className="h-10 lg:h-[60px] w-auto object-contain transition-all duration-300"
               />
             </Link>
 
@@ -283,12 +283,11 @@ export default function Navbar() {
                 id="search-btn"
                 onClick={() => setSearchOpen(!searchOpen)}
                 aria-label="Search"
+                className="w-8 h-8 lg:w-10 lg:h-10"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "40px",
-                  height: "40px",
                   borderRadius: "50%",
                   border: "none",
                   background: "none",
@@ -317,12 +316,11 @@ export default function Navbar() {
                 href="/wishlist"
                 id="wishlist-btn"
                 aria-label="Wishlist"
+                className="w-8 h-8 lg:w-10 lg:h-10"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "40px",
-                  height: "40px",
                   borderRadius: "50%",
                   color: "var(--color-brown)",
                   transition: "all 0.2s ease",
@@ -348,13 +346,12 @@ export default function Navbar() {
                 id="cart-btn"
                 onClick={toggleCart}
                 aria-label={`Cart${itemCount > 0 ? ` (${itemCount} items)` : ''}`}
+                className="w-8 h-8 lg:w-10 lg:h-10"
                 style={{
                   position: "relative",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "40px",
-                  height: "40px",
                   borderRadius: "50%",
                   border: "none",
                   background: "none",
@@ -402,14 +399,14 @@ export default function Navbar() {
               </button>
 
               {/* Auth */}
-              <div style={{ marginLeft: "0.5rem" }}>
+              <div className="ml-1 lg:ml-2">
                 <Show when="signed-out">
                   <SignInButton mode="modal">
                     <button
                       id="sign-in-btn"
                       style={{
-                        padding: "0.5rem 1.25rem",
-                        fontSize: "0.8rem",
+                        padding: "0.5rem 0.75rem",
+                        fontSize: "0.75rem",
                         fontWeight: 600,
                         letterSpacing: "0.08em",
                         textTransform: "uppercase",
@@ -420,6 +417,7 @@ export default function Navbar() {
                         cursor: "pointer",
                         transition: "all 0.2s ease",
                         fontFamily: "var(--font-sans)",
+                        whiteSpace: "nowrap",
                       }}
                       onMouseEnter={(e) =>
                         ((
@@ -452,20 +450,8 @@ export default function Navbar() {
                 id="mobile-menu-btn"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Menu"
-                className="lg-hidden"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  border: "none",
-                  background: "none",
-                  cursor: "pointer",
-                  color: "var(--color-maroon)",
-                  marginLeft: "0.25rem",
-                }}
+                className="lg-hidden w-8 h-8 flex items-center justify-center rounded-full border-none bg-transparent cursor-pointer text-[var(--color-maroon)]"
+                style={{}}
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>

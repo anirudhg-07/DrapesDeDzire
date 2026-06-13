@@ -145,7 +145,7 @@ export default function HeroSection({ initialBanners = [], isAdmin = false }: He
       ))}
 
       {/* Navigation Arrows */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 2rem" }}>
+      <div className="hidden md:flex" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 10, justifyContent: "space-between", alignItems: "center", padding: "0 2rem" }}>
         <button onClick={handlePrev} style={arrowStyle} aria-label="Previous slide"><ChevronLeft size={32} /></button>
         <button onClick={handleNext} style={arrowStyle} aria-label="Next slide"><ChevronRight size={32} /></button>
       </div>

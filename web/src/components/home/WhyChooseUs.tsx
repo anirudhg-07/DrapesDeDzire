@@ -54,9 +54,8 @@ export default function WhyChooseUs() {
         <div className="why-shop-grid">
           {/* Left Side: Brand Editorial Philosophy */}
           <div
+            className="static lg:sticky lg:top-[6rem]"
             style={{
-              position: "sticky",
-              top: "6rem",
               border: "1px solid var(--color-gold)",
               padding: "3rem 2.5rem",
               borderRadius: "2px",
