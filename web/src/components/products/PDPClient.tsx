@@ -643,7 +643,9 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
                   letterSpacing: "0.05em",
                   cursor: "pointer",
                   fontFamily: "var(--font-sans)",
-                  transition: "all 0.2s ease"
+                  transition: "all 0.2s ease",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                 }}
               >
                 {tab.label}
