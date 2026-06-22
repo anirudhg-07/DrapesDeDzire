@@ -2,6 +2,7 @@
 // src/components/admin/AddSareeDrawer.tsx
 import React, { useState, useRef } from "react";
 import { X, Upload, Plus, Loader, Palette, Trash2 } from "lucide-react";
+import imageCompression from "browser-image-compression";
 import { uploadImageToCloudinaryAction, createProductAction } from "@/actions/admin-products";
 import { PREDEFINED_COLORS } from "@/lib/colors";
 
@@ -93,9 +94,14 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
     setError("");
 
     for (const file of Array.from(files)) {
-      const previewUrl = URL.createObjectURL(file);
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1.5,
+        maxWidthOrHeight: 1600,
+        useWebWorker: true,
+      });
+      const previewUrl = URL.createObjectURL(compressed);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", compressed);
       const res = await uploadImageToCloudinaryAction(fd);
       if (res.success && res.url && res.publicId) {
         setVariants((prev) => {
@@ -176,6 +182,7 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
         deliveryInfo: form.deliveryInfo,
         returnPolicy: form.returnPolicy,
         variantGroupId,
+        productType: defaultCategory,
         images: v.images.map((img, idx) => ({ url: img.url, publicId: img.publicId, isPrimary: idx === 0 })),
       });
 

@@ -38,7 +38,7 @@ const collections = [
   {
     name: "Kurta Sets",
     tagline: "Elegant & Comfortable",
-    href: "/collections/kurta-sets",
+    href: "/collections/kurta-set",
     color: "#5C3825",
     accentColor: "#D4AF37",
     emoji: "◇",

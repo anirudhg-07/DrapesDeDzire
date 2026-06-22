@@ -1,6 +1,7 @@
 // src/lib/auth.ts
 // Admin whitelist verification helper — used inside all Server Actions + Admin routes
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { cache } from "react";
 import { prisma } from "./prisma";
 
 export async function getOrCreateDbUser(clerkId: string): Promise<string> {
@@ -69,7 +70,7 @@ export async function requireAuth() {
   return userId;
 }
 
-export async function verifyAdmin() {
+export const verifyAdmin = cache(async function () {
   const user = await currentUser();
   if (!user) {
     throw new Error("Unauthorized: No active session.");
@@ -91,7 +92,7 @@ export async function verifyAdmin() {
   }
 
   return user;
-}
+});
 
 export async function isAdmin(): Promise<boolean> {
   try {

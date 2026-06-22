@@ -89,6 +89,7 @@ export async function createProductAction(data: {
   deliveryInfo?: string;
   returnPolicy?: string;
   variantGroupId?: string;
+  productType?: string; // e.g. "Kurta Set", "Jewellery", "Saree"
   images: Array<{ url: string; publicId: string; isPrimary: boolean }>;
 }): Promise<{ success: boolean; productId?: string; error?: string }> {
   if (!isDbConfigured()) return { success: false, error: "Database not configured." };
@@ -103,8 +104,10 @@ export async function createProductAction(data: {
       .replace(/(^-|-$)/g, "")
       + "-" + Date.now() + Math.floor(Math.random() * 1000);
 
-    // Auto-seed category based on fabric/occasion
-    const categoryName = data.occasion === "Bridal"
+    // Auto-seed category — productType takes priority, then occasion, then fabric
+    const categoryName = data.productType && data.productType !== "Saree"
+      ? data.productType
+      : data.occasion === "Bridal"
       ? "Bridal Special"
       : data.occasion === "Designer"
       ? "Designer Wear"

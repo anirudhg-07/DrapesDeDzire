@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { PlusCircle, ShoppingBag } from "lucide-react";
 import AddSareeDrawer from "./AddSareeDrawer";
 
 export default function AdminHomeActions() {
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [category, setCategory] = useState<string>("Saree");
 
@@ -36,11 +38,17 @@ export default function AdminHomeActions() {
           >
             <PlusCircle size={16} /> Add Kurta Set
           </button>
-          <button 
-            onClick={() => openDrawer("Jewellery")} 
+          <button
+            onClick={() => openDrawer("Jewellery")}
             style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", fontSize: "0.8rem", border: "1px solid var(--color-maroon)", background: "transparent", color: "var(--color-maroon)", borderRadius: "2px", cursor: "pointer", fontWeight: 600 }}
           >
             <PlusCircle size={16} /> Add Jewellery
+          </button>
+          <button
+            onClick={() => router.push("/admin/orders")}
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", fontSize: "0.8rem", border: "1px solid var(--color-maroon)", background: "var(--color-maroon)", color: "#fff", borderRadius: "2px", cursor: "pointer", fontWeight: 600 }}
+          >
+            <ShoppingBag size={16} /> View Orders
           </button>
         </div>
       </div>

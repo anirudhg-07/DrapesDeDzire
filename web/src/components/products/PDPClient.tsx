@@ -30,6 +30,12 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
   const searchParams = useSearchParams();
   const { addItem } = useCart();
 
+  const productLabel = product.categorySlug?.includes("kurta")
+    ? "Kurta Set"
+    : product.categorySlug?.includes("jewellery")
+    ? "Jewellery"
+    : "Saree";
+
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -218,7 +224,7 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
                 Admin Controls
               </p>
               <p style={{ fontSize: "0.82rem", color: "#6b4c3b", margin: 0 }}>
-                {isEditing ? "Editing mode active — modify fields below, then save." : "Click Edit to modify this saree's details inline."}
+                {isEditing ? "Editing mode active — modify fields below, then save." : `Click Edit to modify this ${productLabel.toLowerCase()}'s details inline.`}
               </p>
             </div>
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -233,7 +239,7 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
                       fontSize: "0.82rem", fontWeight: 600, letterSpacing: "0.06em",
                     }}
                   >
-                    <Pencil size={14} /> Edit Saree Details
+                    <Pencil size={14} /> Edit {productLabel} Details
                   </button>
                   <button
                     onClick={handleDelete}
@@ -246,7 +252,7 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
                     }}
                   >
                     {isDeleting ? <Loader size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
-                    {isDeleting ? "Deleting…" : "Delete Saree"}
+                    {isDeleting ? "Deleting…" : `Delete ${productLabel}`}
                   </button>
                 </>
               ) : (
@@ -615,7 +621,7 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
         {/* Tabbed Info Panels */}
         <div style={{ marginBottom: "5rem" }}>
           {/* Tab Headers */}
-          <div style={{ display: "flex", borderBottom: "1px solid var(--color-cream-200)", gap: "2rem" }}>
+          <div style={{ display: "flex", borderBottom: "1px solid var(--color-cream-200)", gap: "2rem", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
             {[
               { id: "details", label: "Saree Specifications" },
               { id: "care", label: "Care Instructions" },
