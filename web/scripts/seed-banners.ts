@@ -1,7 +1,8 @@
 // scripts/seed-banners.ts
+import { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
 
-const slides = [
+const slides: Prisma.BannerCreateInput[] = [
   {
     type: 'HERO',
     imageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6153c?auto=format&fit=crop&w=1920&q=80',

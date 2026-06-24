@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Heart, ShoppingBag, Truck, ShieldCheck, Pencil, Trash2, Check, X, Loader } from "lucide-react";
+import { Heart, ShoppingBag, Truck, ShieldCheck, Pencil, Trash2, Check, X, Loader, ChevronDown } from "lucide-react";
 import { Product } from "@/lib/catalog";
 import ZoomLens from "./ZoomLens";
 import { useAuth } from "@clerk/nextjs";
@@ -30,11 +30,64 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
   const searchParams = useSearchParams();
   const { addItem } = useCart();
 
-  const productLabel = product.categorySlug?.includes("kurta")
+  // Detect product type from the category slug. Kurtas live under their sub-type
+  // slugs (anarkali / straight-cut / sharara) and jewellery under its type slugs,
+  // so match against the full set rather than a single keyword.
+  const _slug = (product.categorySlug || "").toLowerCase();
+  const KURTA_SLUGS = ["kurta", "anarkali", "straight-cut", "sharara", "palazzo"];
+  const JEWEL_SLUGS = ["jewell", "jewel", "necklace", "earring", "bangle", "ring", "pendant"];
+  const productLabel = KURTA_SLUGS.some((s) => _slug.includes(s))
     ? "Kurta Set"
-    : product.categorySlug?.includes("jewellery")
+    : JEWEL_SLUGS.some((s) => _slug.includes(s))
     ? "Jewellery"
     : "Saree";
+
+  // Human-readable sub-type from the slug, e.g. "anarkali" -> "Anarkali"
+  const subType = _slug
+    ? _slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : productLabel;
+  const colourName = product.colour.includes(":") ? product.colour.split(":")[1] : product.colour;
+  const hasColour = colourName && colourName.toUpperCase() !== "N/A";
+  const hasFabric = product.fabric && product.fabric.toUpperCase() !== "N/A";
+
+  // Type-specific specification rows (filtered for "N/A" placeholders)
+  const specRows: { label: string; value: string }[] =
+    productLabel === "Kurta Set"
+      ? [
+          { label: "Style", value: subType },
+          { label: "Set Includes", value: "Kurta, Bottoms & Dupatta" },
+          ...(hasColour ? [{ label: "Colour", value: colourName }] : []),
+          { label: "Occasion", value: product.occasion },
+          { label: "Fit", value: "Regular fit · True to size" },
+          ...(hasFabric ? [{ label: "Fabric", value: product.fabric }] : []),
+          { label: "Wash Care", value: "Gentle hand wash / Dry clean" },
+        ]
+      : productLabel === "Jewellery"
+      ? [
+          { label: "Type", value: hasFabric ? product.fabric : subType },
+          { label: "Finish", value: "Gold-plated · Anti-tarnish" },
+          { label: "Stone Work", value: "Premium American Diamond / Kundan" },
+          { label: "Occasion", value: product.occasion },
+          { label: "Includes", value: "Protective jewellery pouch" },
+        ]
+      : [
+          { label: "Fabric Blend", value: product.fabric },
+          { label: "Weaving Craft", value: "Handloom Jacquard" },
+          ...(hasColour ? [{ label: "Colour Shade", value: colourName }] : []),
+          { label: "Occasion Fit", value: product.occasion },
+          { label: "Saree Length", value: "5.5 meters" },
+          { label: "Blouse Piece", value: "Included (0.8m, contrasting design)" },
+          { label: "Zari Metal Type", value: "Fine gold-plated silver zari" },
+          { label: "Silk Mark", value: "Official verification card included" },
+        ];
+
+  // Type-specific default care text (used when none has been entered)
+  const careDefaults: Record<string, string> = {
+    "Saree": "Dry clean only. Store wrapped in a soft muslin cloth, away from direct sunlight. Keep away from perfume and water. Iron on low heat with a cotton cloth barrier.",
+    "Kurta Set": "Gentle hand wash or dry clean recommended for the first wash. Wash dark colours separately in cold water. Do not bleach. Iron on medium heat. Dry in shade to retain colour.",
+    "Jewellery": "Keep away from water, perfume, and sweat. Wipe gently with a soft dry cloth after each use. Store in the provided pouch to prevent tarnishing. Avoid contact with harsh chemicals.",
+  };
+  const careText = product.careInstructions?.trim() || careDefaults[productLabel];
 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -362,7 +415,7 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
                   display: "block",
                   marginBottom: "0.5rem"
                 }}>
-                  {product.fabric} &middot; {product.occasion}
+                  {hasFabric ? product.fabric : subType} &middot; {product.occasion}
                 </span>
               )}
 
@@ -425,7 +478,7 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
                 </h1>
               )}
               <p style={{ fontSize: "0.8125rem", color: "var(--color-brown-300)", fontFamily: "var(--font-sans)" }}>
-                Product SKU: DRP-{product.fabric.substring(0,3).toUpperCase()}-{product.id.split("-").pop()?.toUpperCase()}
+                Product SKU: DRP-{(hasFabric ? product.fabric : productLabel).replace(/[^a-zA-Z]/g, "").substring(0,3).toUpperCase()}-{product.id.split("-").pop()?.toUpperCase()}
               </p>
             </div>
 
@@ -618,112 +671,120 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
           </div>
         </div>
 
-        {/* Tabbed Info Panels */}
-        <div style={{ marginBottom: "5rem" }}>
-          {/* Tab Headers */}
-          <div style={{ display: "flex", borderBottom: "1px solid var(--color-cream-200)", gap: "2rem", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
-            {[
-              { id: "details", label: "Saree Specifications" },
-              { id: "care", label: "Care Instructions" },
-              { id: "shipping", label: "Shipping & Delivery" },
-              { id: "returns", label: "Returns & Exchanges" }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  padding: "1rem 0",
-                  background: "none",
-                  border: "none",
-                  borderBottom: activeTab === tab.id ? "2.5px solid var(--color-maroon)" : "2.5px solid transparent",
-                  color: activeTab === tab.id ? "var(--color-maroon)" : "var(--color-brown-300)",
-                  fontWeight: activeTab === tab.id ? 700 : 500,
-                  fontSize: "0.875rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-sans)",
-                  transition: "all 0.2s ease",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* Product Info Accordion (mobile-friendly — no horizontal scrolling) */}
+        <div style={{ marginBottom: "5rem", maxWidth: "820px" }}>
+          {[
+            { id: "details", label: `${productLabel} Specifications` },
+            { id: "care", label: "Care Instructions" },
+            { id: "shipping", label: "Shipping & Delivery" },
+            { id: "returns", label: "Returns & Exchanges" },
+          ].map((section) => {
+            const isOpen = activeTab === section.id;
+            return (
+              <div key={section.id} style={{ borderBottom: "1px solid var(--color-cream-200)" }}>
+                <button
+                  onClick={() => setActiveTab(isOpen ? "" : section.id)}
+                  aria-expanded={isOpen}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "1rem",
+                    padding: "1.25rem 0.25rem",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontFamily: "var(--font-sans)",
+                    color: isOpen ? "var(--color-maroon)" : "var(--color-brown)",
+                  }}
+                >
+                  <span style={{ fontSize: "0.875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {section.label}
+                  </span>
+                  <ChevronDown
+                    size={20}
+                    style={{
+                      flexShrink: 0,
+                      color: "var(--color-gold-600)",
+                      transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.25s ease",
+                    }}
+                  />
+                </button>
 
-          {/* Tab Content Panels */}
-          <div style={{ padding: "2rem 0", minHeight: "150px" }}>
-            {activeTab === "details" && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.5rem" }}>
-                {[
-                  { label: "Fabric Blend", value: product.fabric },
-                  { label: "Weaving Craft", value: "Handloom Jacquard" },
-                  { label: "Colour Shade", value: product.colour.includes(":") ? product.colour.split(":")[1] : product.colour },
-                  { label: "Occasion Fit", value: product.occasion },
-                  { label: "Saree Length", value: "5.5 meters" },
-                  { label: "Blouse Piece", value: "Included (0.8 meters, contrasting design)" },
-                  { label: "Zari Metal Type", value: "Fine Gold plated silver zari wire" },
-                  { label: "Silk Mark", value: "Official verification card included" }
-                ].map((spec, i) => (
-                  <div key={i} style={{ borderBottom: "1px solid var(--color-cream-100)", paddingBottom: "0.75rem" }}>
-                    <span style={{ fontSize: "0.75rem", color: "var(--color-brown-300)", textTransform: "uppercase", display: "block", marginBottom: "0.25rem" }}>
-                      {spec.label}
-                    </span>
-                    <span style={{ fontSize: "0.9375rem", color: "var(--color-brown)", fontWeight: 600, fontFamily: "var(--font-sans)" }}>
-                      {spec.value}
-                    </span>
+                {isOpen && (
+                  <div style={{ padding: "0.25rem 0 1.5rem" }}>
+                    {section.id === "details" && (
+                      <div>
+                        {specRows.map((spec, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "baseline",
+                              gap: "1.5rem",
+                              padding: "0.7rem 0",
+                              borderBottom: i < specRows.length - 1 ? "1px solid var(--color-cream-100)" : "none",
+                            }}
+                          >
+                            <span style={{ fontSize: "0.72rem", color: "var(--color-brown-300)", textTransform: "uppercase", letterSpacing: "0.08em", flexShrink: 0, maxWidth: "45%" }}>
+                              {spec.label}
+                            </span>
+                            <span style={{ fontSize: "0.9rem", color: "var(--color-brown)", fontWeight: 600, fontFamily: "var(--font-sans)", textAlign: "right" }}>
+                              {spec.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {section.id === "care" && (
+                      isEditing ? (
+                        <textarea
+                          rows={4}
+                          value={editForm.careInstructions}
+                          onChange={(e) => ef("careInstructions", e.target.value)}
+                          placeholder={careDefaults[productLabel]}
+                          style={{ ...adminInputStyle, width: "100%", resize: "vertical" }}
+                        />
+                      ) : (
+                        <p style={infoTextStyle}>{careText}</p>
+                      )
+                    )}
+
+                    {section.id === "shipping" && (
+                      isEditing ? (
+                        <textarea
+                          rows={4}
+                          value={editForm.deliveryInfo}
+                          onChange={(e) => ef("deliveryInfo", e.target.value)}
+                          style={{ ...adminInputStyle, width: "100%", resize: "vertical" }}
+                        />
+                      ) : (
+                        <p style={infoTextStyle}>{product.deliveryInfo || "Complimentary luxury packaging on all orders. Shipments are processed and tracked within 24-48 hours. Secure transport via reliable partners across India."}</p>
+                      )
+                    )}
+
+                    {section.id === "returns" && (
+                      isEditing ? (
+                        <textarea
+                          rows={4}
+                          value={editForm.returnPolicy}
+                          onChange={(e) => ef("returnPolicy", e.target.value)}
+                          style={{ ...adminInputStyle, width: "100%", resize: "vertical" }}
+                        />
+                      ) : (
+                        <p style={infoTextStyle}>{product.returnPolicy || "We want you to love your purchase. If you are not fully satisfied, returns are accepted within 7 days of delivery for a full refund or direct exchange."}</p>
+                      )
+                    )}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-
-            {activeTab === "care" && (
-              isEditing ? (
-                <textarea
-                  rows={4}
-                  value={editForm.careInstructions}
-                  onChange={(e) => ef("careInstructions", e.target.value)}
-                  style={{ ...adminInputStyle, width: "100%", resize: "vertical" }}
-                />
-              ) : (
-                <p style={{ fontSize: "0.9375rem", color: "var(--color-brown-500)", lineHeight: 1.8, maxWidth: "800px", whiteSpace: "pre-line" }}>
-                  {product.careInstructions}
-                </p>
-              )
-            )}
-
-            {activeTab === "shipping" && (
-              isEditing ? (
-                <textarea
-                  rows={4}
-                  value={editForm.deliveryInfo}
-                  onChange={(e) => ef("deliveryInfo", e.target.value)}
-                  style={{ ...adminInputStyle, width: "100%", resize: "vertical" }}
-                />
-              ) : (
-                <p style={{ fontSize: "0.9375rem", color: "var(--color-brown-500)", lineHeight: 1.8, maxWidth: "800px", whiteSpace: "pre-line" }}>
-                  {product.deliveryInfo || "Complimentary luxury packaging on all orders. Shipments are processed and tracked within 24-48 hours. Secure transport via reliable partners across India."}
-                </p>
-              )
-            )}
-
-            {activeTab === "returns" && (
-              isEditing ? (
-                <textarea
-                  rows={4}
-                  value={editForm.returnPolicy}
-                  onChange={(e) => ef("returnPolicy", e.target.value)}
-                  style={{ ...adminInputStyle, width: "100%", resize: "vertical" }}
-                />
-              ) : (
-                <p style={{ fontSize: "0.9375rem", color: "var(--color-brown-500)", lineHeight: 1.8, maxWidth: "800px", whiteSpace: "pre-line" }}>
-                  {product.returnPolicy || "We want you to love your drape. If you are not fully satisfied, returns are accepted within 7 days of delivery for a full refund or direct exchange."}
-                </p>
-              )
-            )}
-          </div>
+            );
+          })}
         </div>
 
         {/* Related Products Section */}
@@ -779,7 +840,7 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
                     </div>
                     <div style={{ padding: "1rem 1.25rem 1.25rem", display: "flex", flexDirection: "column", flex: 1 }}>
                       <span style={{ fontSize: "0.625rem", color: "var(--color-gold-600)", fontWeight: 700, textTransform: "uppercase", marginBottom: "0.25rem" }}>
-                        {relProduct.fabric}
+                        {relProduct.fabric && relProduct.fabric.toUpperCase() !== "N/A" ? relProduct.fabric : relProduct.occasion}
                       </span>
                       <Link href={`/products/${relProduct.id}`} style={{ textDecoration: "none" }}>
                         <h3 style={{
@@ -826,6 +887,15 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
     </div>
   );
 }
+
+const infoTextStyle: React.CSSProperties = {
+  fontSize: "0.9375rem",
+  color: "var(--color-brown-500)",
+  lineHeight: 1.8,
+  whiteSpace: "pre-line",
+  margin: 0,
+  maxWidth: "680px",
+};
 
 const adminInputStyle: React.CSSProperties = {
   padding: "8px 12px",

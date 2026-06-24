@@ -9,6 +9,8 @@ import { PREDEFINED_COLORS } from "@/lib/colors";
 const FABRICS = ["Kanchipuram Silk", "Banarasi Silk", "Chanderi", "Georgette", "Organza", "Cotton Blend"];
 const OCCASIONS = ["Bridal", "Festive", "Designer", "Casual", "Party Wear"];
 const JEWELLERY_TYPES = ["Necklace", "Earrings", "Bangles", "Rings", "Pendant", "Set"];
+// Kurta sub-categories — these map to /collections/<slug> (e.g. /collections/anarkali)
+const KURTA_TYPES = ["Anarkali", "Straight Cut", "Sharara"];
 
 interface UploadedImage {
   url: string;
@@ -41,6 +43,14 @@ const defaultForm = {
   returnPolicy: "Easy returns within 7 days of delivery. Product must be unused, untampered, with all tags intact.",
 };
 
+// Care text differs by product type
+const CARE_DEFAULTS: Record<string, string> = {
+  "Saree": defaultForm.careInstructions,
+  "Kurta Set": "Gentle hand wash or dry clean for the first wash. Wash dark colours separately in cold water. Do not bleach. Iron on medium heat. Dry in shade to retain colour.",
+  "Jewellery": "Keep away from water, perfume and sweat. Wipe gently with a soft dry cloth after use. Store in the provided pouch to prevent tarnishing. Avoid contact with harsh chemicals.",
+};
+const defaultCareFor = (cat?: string) => CARE_DEFAULTS[cat || "Saree"] || CARE_DEFAULTS["Saree"];
+
 const createDefaultVariant = (): ColorVariant => ({
   id: Math.random().toString(36).substring(7),
   colour: `${PREDEFINED_COLORS[0].hex}:${PREDEFINED_COLORS[0].name}`,
@@ -49,10 +59,14 @@ const createDefaultVariant = (): ColorVariant => ({
 });
 
 export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCategory }: AddSareeDrawerProps) {
+  const defaultFabricFor = (cat?: string) =>
+    cat === "Jewellery" ? JEWELLERY_TYPES[0] : cat === "Kurta Set" ? KURTA_TYPES[0] : FABRICS[0];
+
   const [form, setForm] = useState(() => ({
     ...defaultForm,
     name: defaultCategory ? `New ${defaultCategory}` : "",
-    fabric: defaultCategory === "Jewellery" ? JEWELLERY_TYPES[0] : FABRICS[0],
+    fabric: defaultFabricFor(defaultCategory),
+    careInstructions: defaultCareFor(defaultCategory),
   }));
   const [variants, setVariants] = useState<ColorVariant[]>([createDefaultVariant()]);
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
@@ -63,7 +77,8 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
       setForm(prev => ({ 
         ...prev, 
         name: `New ${defaultCategory}`,
-        fabric: defaultCategory === "Jewellery" ? JEWELLERY_TYPES[0] : FABRICS[0],
+        fabric: defaultFabricFor(defaultCategory),
+        careInstructions: defaultCareFor(defaultCategory),
       }));
     }
   }, [defaultCategory, isOpen]);
@@ -104,11 +119,14 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
       fd.append("file", compressed);
       const res = await uploadImageToCloudinaryAction(fd);
       if (res.success && res.url && res.publicId) {
-        setVariants((prev) => {
-          const next = [...prev];
-          next[activeVariantIdx].images.push({ url: res.url!, publicId: res.publicId!, previewUrl });
-          return next;
-        });
+        // Immutable update — mutating (.push) here would double-add under React StrictMode.
+        setVariants((prev) =>
+          prev.map((v, i) =>
+            i === activeVariantIdx
+              ? { ...v, images: [...v.images, { url: res.url!, publicId: res.publicId!, previewUrl }] }
+              : v
+          )
+        );
       } else {
         setError(res.error || "Image upload failed.");
       }
@@ -117,11 +135,13 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
   };
 
   const removeImage = (idx: number) => {
-    setVariants((prev) => {
-      const next = [...prev];
-      next[activeVariantIdx].images = next[activeVariantIdx].images.filter((_, i) => i !== idx);
-      return next;
-    });
+    setVariants((prev) =>
+      prev.map((v, i) =>
+        i === activeVariantIdx
+          ? { ...v, images: v.images.filter((_, j) => j !== idx) }
+          : v
+      )
+    );
   };
 
   const handleMockUpload = () => {
@@ -169,6 +189,9 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
     for (const v of variants) {
       const fabricValue = defaultCategory === "Kurta Set" ? "N/A" : form.fabric;
       const colourValue = defaultCategory === "Jewellery" ? "#FFFFFF:N/A" : v.colour;
+      // For kurtas, the chosen sub-type (Anarkali/Straight Cut/Sharara) becomes the
+      // product category so it appears under /collections/<sub-type>.
+      const productTypeValue = defaultCategory === "Kurta Set" ? form.fabric : defaultCategory;
 
       const res = await createProductAction({
         name: form.name,
@@ -182,7 +205,7 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
         deliveryInfo: form.deliveryInfo,
         returnPolicy: form.returnPolicy,
         variantGroupId,
-        productType: defaultCategory,
+        productType: productTypeValue,
         images: v.images.map((img, idx) => ({ url: img.url, publicId: img.publicId, isPrimary: idx === 0 })),
       });
 
@@ -215,14 +238,14 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
       <div
         onClick={onClose}
         style={{
-          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 200,
+          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 2000,
           animation: "fade-in 0.2s ease",
         }}
       />
       <div
         style={{
           position: "fixed", top: 0, right: 0, height: "100vh", width: "min(600px, 96vw)",
-          backgroundColor: "#FCFBF7", zIndex: 201, overflowY: "auto",
+          backgroundColor: "#FCFBF7", zIndex: 2001, overflowY: "auto", overflowX: "hidden",
           boxShadow: "-8px 0 40px rgba(74,14,23,0.12)",
           display: "flex", flexDirection: "column",
         }}
@@ -237,7 +260,7 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
             <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#D4AF37", marginBottom: "4px" }}>
               Admin Mode
             </p>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 500, margin: 0 }}>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 500, margin: 0, color: "#FCFBF7" }}>
               Add New Product
             </h2>
           </div>
@@ -259,27 +282,39 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
                 <input style={inputStyle} value={form.name} onChange={(e) => handleField("name", e.target.value)} placeholder="e.g., Deep Crimson Kanchipuram Silk / Royal Blue Kurta Set" />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "12px" }}>
                 <div>
                   <label style={labelStyle}>Price (₹) <span style={{ color: "#c0392b" }}>*</span></label>
                   <input type="number" min="0" style={inputStyle} value={form.basePrice} onChange={(e) => handleField("basePrice", e.target.value)} placeholder="e.g., 25000" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Category Focus</label>
-                  <select style={inputStyle} value={form.occasion} onChange={(e) => handleField("occasion", e.target.value)}>
-                    {OCCASIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
+                  {defaultCategory === "Kurta Set" ? (
+                    <>
+                      <label style={labelStyle}>Kurta Type</label>
+                      <select style={inputStyle} value={form.fabric} onChange={(e) => handleField("fabric", e.target.value)}>
+                        {KURTA_TYPES.map((k) => <option key={k} value={k}>{k}</option>)}
+                      </select>
+                    </>
+                  ) : defaultCategory === "Jewellery" ? (
+                    <>
+                      <label style={labelStyle}>Jewellery Type</label>
+                      <select style={inputStyle} value={form.fabric} onChange={(e) => handleField("fabric", e.target.value)}>
+                        {JEWELLERY_TYPES.map((f) => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </>
+                  ) : (
+                    <>
+                      <label style={labelStyle}>Category Focus</label>
+                      <select style={inputStyle} value={form.occasion} onChange={(e) => handleField("occasion", e.target.value)}>
+                        {OCCASIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {defaultCategory === "Jewellery" ? (
-                <div>
-                  <label style={labelStyle}>Jewellery Type</label>
-                  <select style={inputStyle} value={form.fabric} onChange={(e) => handleField("fabric", e.target.value)}>
-                    {JEWELLERY_TYPES.map((f) => <option key={f} value={f}>{f}</option>)}
-                  </select>
-                </div>
-              ) : defaultCategory === "Kurta Set" ? null : (
+              {/* Fabric/Material — sarees only */}
+              {defaultCategory !== "Jewellery" && defaultCategory !== "Kurta Set" && (
                 <div>
                   <label style={labelStyle}>Fabric / Material</label>
                   <select style={inputStyle} value={form.fabric} onChange={(e) => handleField("fabric", e.target.value)}>
@@ -342,7 +377,7 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
                 </button>
               )}
               
-              <div style={{ display: "grid", gridTemplateColumns: defaultCategory === "Jewellery" ? "1fr" : "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: defaultCategory === "Jewellery" ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: "12px", marginBottom: "16px" }}>
                 {defaultCategory !== "Jewellery" && (
                   <div>
                     <label style={labelStyle}>Select Color</label>

@@ -221,7 +221,7 @@ export default function PLPClient({
 
           <div style={{ display: "none" }} className="lg-flex">
             <span style={{ fontSize: "0.875rem", color: "var(--color-brown-500)", fontFamily: "var(--font-sans)" }}>
-              Showing {initialProducts.length} exquisite sarees
+              Showing {initialProducts.length} exquisite {/kurta/i.test(categoryTitle) ? "kurta sets" : /jewell/i.test(categoryTitle) ? "jewellery pieces" : "sarees"}
             </span>
           </div>
 
@@ -563,23 +563,25 @@ export default function PLPClient({
                             </div>
                           )}
                         </Link>
-                        {/* Fabric Badge */}
-                        <div style={{
-                          position: "absolute",
-                          top: "0.75rem",
-                          left: "0.75rem",
-                          backgroundColor: "rgba(74,14,23,0.85)",
-                          color: "var(--color-gold-400)",
-                          padding: "0.25rem 0.625rem",
-                          fontSize: "0.625rem",
-                          fontWeight: 700,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                          borderRadius: "1px",
-                          zIndex: 5
-                        }}>
-                          {product.fabric}
-                        </div>
+                        {/* Fabric Badge — hidden when not applicable (e.g. kurta sets) */}
+                        {product.fabric && product.fabric.toUpperCase() !== "N/A" && (
+                          <div style={{
+                            position: "absolute",
+                            top: "0.75rem",
+                            left: "0.75rem",
+                            backgroundColor: "rgba(74,14,23,0.85)",
+                            color: "var(--color-gold-400)",
+                            padding: "0.25rem 0.625rem",
+                            fontSize: "0.625rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            borderRadius: "1px",
+                            zIndex: 5
+                          }}>
+                            {product.fabric}
+                          </div>
+                        )}
                       {/* Wishlist Heart Icon */}
                         <button
                           onClick={(e) => handleWishlistToggle(e, product.id)}

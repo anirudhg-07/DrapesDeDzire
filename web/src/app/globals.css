@@ -88,6 +88,10 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent stray decorative/full-bleed elements from creating a
+       horizontal scroll + empty whitespace. clip (not hidden) keeps
+       position: sticky working for the navbar. */
+    overflow-x: clip;
   }
 
   body {
@@ -95,6 +99,8 @@
     color: var(--color-brown);
     font-family: var(--font-sans);
     line-height: 1.65;
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   h1, h2, h3 {
