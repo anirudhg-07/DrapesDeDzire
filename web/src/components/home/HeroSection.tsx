@@ -12,79 +12,52 @@ interface HeroSectionProps {
   isAdmin?: boolean;
 }
 
+// Fallback ratio used until an image reports its real dimensions on load.
+const DEFAULT_RATIO = 16 / 9;
+
 export default function HeroSection({ initialBanners = [], isAdmin = false }: HeroSectionProps) {
   const [active, setActive] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
-  const [slides, setSlides] = useState<Banner[]>(initialBanners);
+  const [slides] = useState<Banner[]>(initialBanners);
+  // Natural aspect ratio (w/h) per banner id, filled in as each image loads.
+  const [ratios, setRatios] = useState<Record<string, number>>({});
 
-  // If no banners from DB yet, provide a fallback to prevent blank screen
   const displaySlides = slides.length > 0 ? slides : [{
     id: 'fallback',
     imageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6153c?auto=format&fit=crop&w=1920&q=80',
-    title: 'Heritage in Every Thread',
-    subtitle: 'Sarees · Kurta Sets · Jewellery',
-    description: 'Centuries of craftsmanship, woven into timeless elegance. Discover our curated collection of authentic silk sarees, elegant kurta sets, and premium jewellery.',
-    ctaText: 'Explore Collection',
     redirectUrl: '/collections',
-    accentColor: '#D4AF37'
   } as Banner];
 
-  const handleNext = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setActive((prev) => (prev + 1) % displaySlides.length);
-      setIsTransitioning(false);
-    }, 400);
-  };
+  const hasMultiple = displaySlides.length > 1;
 
-  const handlePrev = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setActive((prev) => (prev - 1 + displaySlides.length) % displaySlides.length);
-      setIsTransitioning(false);
-    }, 400);
-  };
+  const handleNext = () => setActive((prev) => (prev + 1) % displaySlides.length);
+  const handlePrev = () => setActive((prev) => (prev - 1 + displaySlides.length) % displaySlides.length);
+  const goTo = (idx: number) => setActive(idx);
 
   useEffect(() => {
-    // Auto slide
-    const timer = setInterval(() => {
-      handleNext();
-    }, 5000);
+    if (!hasMultiple) return;
+    const timer = setInterval(handleNext, 5000);
     return () => clearInterval(timer);
-  }, [active, displaySlides.length]);
+  }, [hasMultiple, displaySlides.length]);
 
-  const goTo = (idx: number) => {
-    if (idx === active || isTransitioning) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setActive(idx);
-      setIsTransitioning(false);
-    }, 300);
-  };
+  const handleBannersUpdated = () => window.location.reload();
 
-  // Reload banners after admin updates
-  const handleBannersUpdated = async () => {
-    // We can do a router.refresh() or fetch directly.
-    // For simplicity, a page reload works best to sync all server components.
-    window.location.reload();
-  };
-
-  const slide = displaySlides[active];
+  const activeSlide = displaySlides[active];
+  // Size the banner slot to the active image's real ratio so nothing is cropped
+  // and there are no letterbox bars when the upload matches the slot.
+  const activeRatio = ratios[activeSlide.id] || DEFAULT_RATIO;
 
   return (
     <section
       id="hero"
-      aria-label="Hero banner"
+      aria-label="Promotional banners"
       style={{
         position: "relative",
-        minHeight: "85vh",
-        display: "flex",
-        alignItems: "center",
+        width: "100%",
+        aspectRatio: activeRatio,
+        maxHeight: "88vh",
         overflow: "hidden",
-        backgroundColor: "#1a0a0e" // fallback dark bg
+        backgroundColor: "var(--color-ivory)",
       }}
     >
       {isAdmin && (
@@ -114,201 +87,109 @@ export default function HeroSection({ initialBanners = [], isAdmin = false }: He
         </button>
       )}
 
-      {/* Background Image with crossfade transition */}
-      {displaySlides.map((s, idx) => (
-        <div 
-          key={s.id}
+      {/* Clickable banner slides with crossfade */}
+      {displaySlides.map((s, idx) => {
+        const media = (
+          <Image
+            src={s.imageUrl}
+            alt={s.title || "Promotional banner"}
+            fill
+            priority={idx === 0}
+            sizes="100vw"
+            style={{ objectFit: "contain" }}
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              if (img.naturalWidth && img.naturalHeight) {
+                const r = img.naturalWidth / img.naturalHeight;
+                setRatios((prev) => (prev[s.id] ? prev : { ...prev, [s.id]: r }));
+              }
+            }}
+          />
+        );
+
+        return (
+          <div
+            key={s.id}
+            style={{
+              position: "absolute",
+              inset: 0,
+              opacity: idx === active ? 1 : 0,
+              transition: "opacity 0.6s ease-in-out",
+              pointerEvents: idx === active ? "auto" : "none",
+              zIndex: idx === active ? 2 : 1,
+            }}
+          >
+            {s.redirectUrl ? (
+              <Link
+                href={s.redirectUrl}
+                aria-label={s.title || "View offer"}
+                style={{ display: "block", position: "relative", width: "100%", height: "100%" }}
+              >
+                {media}
+              </Link>
+            ) : (
+              media
+            )}
+          </div>
+        );
+      })}
+
+      {/* Navigation arrows (desktop, only when multiple banners) */}
+      {hasMultiple && (
+        <div
+          className="hidden md:flex"
           style={{
             position: "absolute",
             inset: 0,
-            opacity: idx === active ? 1 : 0,
-            transition: "opacity 0.8s ease-in-out",
-            zIndex: 0
+            pointerEvents: "none",
+            zIndex: 10,
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "0 1.5rem",
           }}
         >
-          <Image
-            src={s.imageUrl}
-            alt={s.title || 'Hero Background'}
-            fill
-            priority={idx === 0}
-            style={{ objectFit: 'cover' }}
-          />
-          {/* Dark gradient overlay to ensure text is readable */}
-          {(s.title || s.subtitle || s.description || s.ctaText) && (
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to right, rgba(26,10,14,0.9) 0%, rgba(26,10,14,0.5) 50%, rgba(26,10,14,0.1) 100%)"
-            }} />
-          )}
+          <button onClick={handlePrev} style={arrowStyle} aria-label="Previous banner">
+            <ChevronLeft size={28} />
+          </button>
+          <button onClick={handleNext} style={arrowStyle} aria-label="Next banner">
+            <ChevronRight size={28} />
+          </button>
         </div>
-      ))}
-
-      {/* Navigation Arrows */}
-      <div className="hidden md:flex" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 10, justifyContent: "space-between", alignItems: "center", padding: "0 2rem" }}>
-        <button onClick={handlePrev} style={arrowStyle} aria-label="Previous slide"><ChevronLeft size={32} /></button>
-        <button onClick={handleNext} style={arrowStyle} aria-label="Next slide"><ChevronRight size={32} /></button>
-      </div>
-
-      {/* Decorative pattern overlay */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `
-            radial-gradient(circle at 20% 50%, rgba(212,175,55,0.08) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(212,175,55,0.05) 0%, transparent 40%)
-          `,
-          pointerEvents: "none",
-          zIndex: 1
-        }}
-      />
-
-      {/* Ornamental corner accents */}
-      {["top-8 left-8", "top-8 right-8", "bottom-8 left-8", "bottom-8 right-8"].map(
-        (pos, i) => (
-          <div
-            key={i}
-            aria-hidden
-            style={{
-              position: "absolute",
-              ...(pos.includes("top") ? { top: "2rem" } : { bottom: "2rem" }),
-              ...(pos.includes("left") ? { left: "2rem" } : { right: "2rem" }),
-              width: "40px",
-              height: "40px",
-              borderTop: pos.includes("top") ? `1px solid rgba(212,175,55,0.3)` : "none",
-              borderBottom: pos.includes("bottom") ? `1px solid rgba(212,175,55,0.3)` : "none",
-              borderLeft: pos.includes("left") ? `1px solid rgba(212,175,55,0.3)` : "none",
-              borderRight: pos.includes("right") ? `1px solid rgba(212,175,55,0.3)` : "none",
-              opacity: 0.7,
-              zIndex: 1
-            }}
-          />
-        )
       )}
 
-      {/* Main content */}
-      <div className="section-container" style={{ width: "100%", position: "relative", zIndex: 2 }}>
+      {/* Slide indicators (only when multiple banners) */}
+      {hasMultiple && (
         <div
           style={{
-            maxWidth: "680px",
-            opacity: isTransitioning ? 0 : 1,
-            transform: isTransitioning ? "translateY(12px)" : "translateY(0)",
-            transition: "opacity 0.4s ease, transform 0.4s ease",
+            position: "absolute",
+            bottom: "1rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            gap: "0.5rem",
+            zIndex: 10,
           }}
         >
-          {slide.subtitle && (
-            <div
+          {displaySlides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => goTo(idx)}
+              aria-label={`Go to banner ${idx + 1}`}
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.375rem 1rem",
-                backgroundColor: "rgba(212,175,55,0.12)",
-                border: `1px solid rgba(212,175,55,0.3)`,
-                borderRadius: "2px",
-                marginBottom: "1.5rem",
+                width: idx === active ? "1.75rem" : "0.5rem",
+                height: "0.375rem",
+                borderRadius: "3px",
+                backgroundColor: idx === active ? "var(--color-gold)" : "rgba(212,175,55,0.45)",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.35s ease",
+                padding: 0,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
               }}
-            >
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: slide.accentColor || "#D4AF37", display: "inline-block" }} />
-              <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: slide.accentColor || "#D4AF37", fontFamily: "var(--font-sans)" }}>
-                {slide.subtitle}
-              </span>
-            </div>
-          )}
-
-          {slide.title && (
-            <h1
-              style={{
-                fontSize: "clamp(2.25rem, 6vw, 4.5rem)",
-                fontFamily: "var(--font-serif)",
-                color: "var(--color-ivory)",
-                fontWeight: 600,
-                lineHeight: 1.1,
-                marginBottom: "1.5rem",
-                letterSpacing: "-0.01em",
-                textShadow: "0 2px 4px rgba(0,0,0,0.5)"
-              }}
-            >
-              {slide.title}
-            </h1>
-          )}
-
-          {(slide.title || slide.description) && (
-            <div style={{ width: "3rem", height: "2px", background: `linear-gradient(90deg, ${slide.accentColor || '#D4AF37'}, transparent)`, marginBottom: "1.5rem" }} />
-          )}
-
-          {slide.description && (
-            <p
-              style={{
-                fontSize: "clamp(1rem, 2vw, 1.125rem)",
-                color: "rgba(252,251,247,0.85)",
-                lineHeight: 1.75,
-                marginBottom: "2.5rem",
-                maxWidth: "520px",
-                fontFamily: "var(--font-sans)",
-                textShadow: "0 1px 3px rgba(0,0,0,0.5)"
-              }}
-            >
-              {slide.description}
-            </p>
-          )}
-
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-            {slide.ctaText && slide.redirectUrl && (
-              <Link href={slide.redirectUrl}>
-                <button
-                  style={{
-                    padding: "0.875rem 2rem",
-                    backgroundColor: slide.accentColor || "#D4AF37",
-                    color: "var(--color-maroon)",
-                    border: "none",
-                    borderRadius: "2px",
-                    fontSize: "0.875rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                    transition: "all 0.25s ease",
-                    fontFamily: "var(--font-sans)",
-                    boxShadow: `0 4px 24px rgba(212,175,55,0.35)`,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-                  }}
-                >
-                  {slide.ctaText}
-                </button>
-              </Link>
-            )}
-          </div>
+            />
+          ))}
         </div>
-      </div>
-
-      {/* Slide indicators */}
-      <div style={{ position: "absolute", bottom: "2.5rem", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "0.625rem", zIndex: 10 }}>
-        {displaySlides.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => goTo(idx)}
-            aria-label={`Go to slide ${idx + 1}`}
-            style={{
-              width: idx === active ? "2rem" : "0.5rem",
-              height: "0.375rem",
-              borderRadius: "3px",
-              backgroundColor: idx === active ? "var(--color-gold)" : "rgba(212,175,55,0.3)",
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.35s ease",
-              padding: 0,
-            }}
-          />
-        ))}
-      </div>
+      )}
 
       {isAdmin && (
         <EditBannerDrawer
@@ -316,7 +197,7 @@ export default function HeroSection({ initialBanners = [], isAdmin = false }: He
           onClose={() => setIsEditDrawerOpen(false)}
           bannerType="HERO"
           sectionName="Hero Slider Banners"
-          recommendedSize="1920x1080px (16:9 Landscape)"
+          recommendedSize="Wide landscape (e.g. 1920x1080 / 16:9) shows best across phone & desktop. Any size works — the full image is always shown."
           onUpdated={handleBannersUpdated}
         />
       )}
@@ -325,17 +206,17 @@ export default function HeroSection({ initialBanners = [], isAdmin = false }: He
 }
 
 const arrowStyle: React.CSSProperties = {
-  background: "rgba(0,0,0,0.3)",
-  border: "1px solid rgba(212,175,55,0.3)",
+  background: "rgba(0,0,0,0.35)",
+  border: "1px solid rgba(212,175,55,0.4)",
   color: "#FCFBF7",
   borderRadius: "50%",
-  width: "48px",
-  height: "48px",
+  width: "44px",
+  height: "44px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
   pointerEvents: "auto",
   backdropFilter: "blur(4px)",
-  transition: "all 0.2s ease"
+  transition: "all 0.2s ease",
 };
