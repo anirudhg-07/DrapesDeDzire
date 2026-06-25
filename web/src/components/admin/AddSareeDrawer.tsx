@@ -8,7 +8,8 @@ import { PREDEFINED_COLORS } from "@/lib/colors";
 
 const FABRICS = ["Kanchipuram Silk", "Banarasi Silk", "Chanderi", "Georgette", "Organza", "Cotton Blend"];
 const OCCASIONS = ["Bridal", "Festive", "Designer", "Casual", "Party Wear"];
-const JEWELLERY_TYPES = ["Necklace", "Earrings", "Bangles", "Rings", "Pendant", "Set"];
+// Plural to match the navbar collection slugs (/collections/necklaces, etc.)
+const JEWELLERY_TYPES = ["Necklaces", "Earrings", "Bangles", "Rings", "Pendants", "Sets"];
 // Kurta sub-categories — these map to /collections/<slug> (e.g. /collections/anarkali)
 const KURTA_TYPES = ["Anarkali", "Straight Cut", "Sharara"];
 
@@ -189,9 +190,10 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
     for (const v of variants) {
       const fabricValue = defaultCategory === "Kurta Set" ? "N/A" : form.fabric;
       const colourValue = defaultCategory === "Jewellery" ? "#FFFFFF:N/A" : v.colour;
-      // For kurtas, the chosen sub-type (Anarkali/Straight Cut/Sharara) becomes the
-      // product category so it appears under /collections/<sub-type>.
-      const productTypeValue = defaultCategory === "Kurta Set" ? form.fabric : defaultCategory;
+      // For kurtas and jewellery, the chosen sub-type (e.g. Anarkali, Necklaces)
+      // becomes the product category so it appears under /collections/<sub-type>.
+      const productTypeValue =
+        defaultCategory === "Kurta Set" || defaultCategory === "Jewellery" ? form.fabric : defaultCategory;
 
       const res = await createProductAction({
         name: form.name,

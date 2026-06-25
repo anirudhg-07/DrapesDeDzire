@@ -108,10 +108,11 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
             background: "#fff",
             borderRadius: "12px",
             border: "1px solid #e8ddd5",
-            overflow: "hidden",
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table style={{ width: "100%", minWidth: "720px", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#faf4ef", borderBottom: "1px solid #e8ddd5" }}>
                 {["Order #", "Customer", "Date", "Items", "Total", "Status", ""].map(
@@ -127,6 +128,9 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                         letterSpacing: "0.1em",
                         textTransform: "uppercase",
                         whiteSpace: "nowrap",
+                        ...(h === ""
+                          ? { position: "sticky", right: 0, background: "#faf4ef", boxShadow: "-6px 0 8px -6px rgba(0,0,0,0.12)" }
+                          : {}),
                       }}
                     >
                       {h}
@@ -218,7 +222,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                         {STATUS_LABELS[order.status]}
                       </span>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", position: "sticky", right: 0, background: "#fff", boxShadow: "-6px 0 8px -6px rgba(0,0,0,0.12)" }}>
                       <Link
                         href={`/admin/orders/${order.id}`}
                         style={{

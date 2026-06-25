@@ -13,12 +13,24 @@ import { useAuth } from "@clerk/nextjs";
 import { toggleWishlistAction, getWishlistAction } from "@/actions/wishlist";
 import AddSareeDrawer from "@/components/admin/AddSareeDrawer";
 
+interface SubNav {
+  parentSlug: string;
+  parentLabel: string;
+  children: { slug: string; label: string }[];
+  activeSlug: string;
+}
+
 interface PLPClientProps {
   initialProducts: Product[];
   categories: Category[];
   categoryTitle?: string;
   categoryDescription?: string;
   isAdmin?: boolean;
+  subNav?: SubNav;
+  // Actual filter values present in this category (so options match real data).
+  availableFabrics?: string[];
+  availableColours?: string[];
+  availableOccasions?: string[];
 }
 
 const FABRICS = ["Kanchipuram Silk", "Banarasi Silk", "Chanderi", "Georgette", "Organza"];
@@ -31,10 +43,37 @@ export default function PLPClient({
   categoryTitle = "Exquisite Collections",
   categoryDescription = "Browse through our curated showroom of handloom masterpieces, handwoven by India's finest master weavers.",
   isAdmin = false,
+  subNav,
+  availableFabrics,
+  availableColours,
+  availableOccasions,
 }: PLPClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Product type drives both the noun and which filters make sense.
+  const productType: "kurta" | "jewellery" | "saree" =
+    subNav?.parentSlug === "kurta-set" || /kurta/i.test(categoryTitle)
+      ? "kurta"
+      : subNav?.parentSlug === "jewellery" || /jewell/i.test(categoryTitle)
+      ? "jewellery"
+      : "saree";
+
+  const itemNoun =
+    productType === "kurta" ? "kurta sets" : productType === "jewellery" ? "jewellery pieces" : "sarees";
+
+  // Only show filters relevant to the category:
+  //  - Fabric: sarees only (kurtas store "N/A"; jewellery uses type as its category)
+  //  - Colour: sarees & kurtas (jewellery colour is "N/A")
+  //  - Occasion: everything
+  const showFabricFilter = productType === "saree";
+  const showColourFilter = productType !== "jewellery";
+
+  // Use the real values present in this category; fall back to defaults if none passed.
+  const fabricOptions = availableFabrics && availableFabrics.length > 0 ? availableFabrics : FABRICS;
+  const colourOptions = availableColours && availableColours.length > 0 ? availableColours : COLOURS;
+  const occasionOptions = availableOccasions && availableOccasions.length > 0 ? availableOccasions : OCCASIONS;
 
   // Parse initial filters from URL
   const getSelectedFilters = (paramName: string): string[] => {
@@ -186,6 +225,36 @@ export default function PLPClient({
           }}>
             {categoryDescription}
           </p>
+
+          {/* Sub-category chips (kurta / jewellery groups) */}
+          {subNav && subNav.children.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1.5rem" }}>
+              {[{ slug: subNav.parentSlug, label: "All" }, ...subNav.children].map((chip) => {
+                const isActive = subNav.activeSlug === chip.slug;
+                return (
+                  <Link
+                    key={chip.slug}
+                    href={`/collections/${chip.slug}`}
+                    style={{
+                      padding: "0.45rem 1.1rem",
+                      borderRadius: "999px",
+                      fontSize: "0.8125rem",
+                      fontWeight: 600,
+                      letterSpacing: "0.02em",
+                      textDecoration: "none",
+                      fontFamily: "var(--font-sans)",
+                      transition: "all 0.2s ease",
+                      border: "1px solid var(--color-maroon)",
+                      backgroundColor: isActive ? "var(--color-maroon)" : "transparent",
+                      color: isActive ? "var(--color-ivory)" : "var(--color-maroon)",
+                    }}
+                  >
+                    {chip.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Action Bar */}
@@ -221,7 +290,7 @@ export default function PLPClient({
 
           <div style={{ display: "none" }} className="lg-flex">
             <span style={{ fontSize: "0.875rem", color: "var(--color-brown-500)", fontFamily: "var(--font-sans)" }}>
-              Showing {initialProducts.length} exquisite {/kurta/i.test(categoryTitle) ? "kurta sets" : /jewell/i.test(categoryTitle) ? "jewellery pieces" : "sarees"}
+              Showing {initialProducts.length} exquisite {itemNoun}
             </span>
           </div>
 
@@ -309,6 +378,7 @@ export default function PLPClient({
             </div>
 
             {/* Fabric Filter */}
+            {showFabricFilter && (
             <div style={{ borderBottom: "1px solid var(--color-cream-100)", paddingBottom: "1.25rem" }}>
               <h4 style={{
                 fontSize: "0.8125rem",
@@ -322,7 +392,7 @@ export default function PLPClient({
                 Fabric
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {FABRICS.map((fabric) => (
+                {fabricOptions.map((fabric) => (
                   <label key={fabric} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", cursor: "pointer", color: "var(--color-brown-500)", fontFamily: "var(--font-sans)" }}>
                     <input
                       type="checkbox"
@@ -335,8 +405,10 @@ export default function PLPClient({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Colour Filter */}
+            {showColourFilter && (
             <div style={{ borderBottom: "1px solid var(--color-cream-100)", paddingBottom: "1.25rem" }}>
               <h4 style={{
                 fontSize: "0.8125rem",
@@ -350,7 +422,7 @@ export default function PLPClient({
                 Colour
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {COLOURS.map((colour) => (
+                {colourOptions.map((colour) => (
                   <label key={colour} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", cursor: "pointer", color: "var(--color-brown-500)", fontFamily: "var(--font-sans)" }}>
                     <input
                       type="checkbox"
@@ -363,6 +435,7 @@ export default function PLPClient({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Occasion Filter */}
             <div style={{ borderBottom: "1px solid var(--color-cream-100)", paddingBottom: "1.25rem" }}>
@@ -378,7 +451,7 @@ export default function PLPClient({
                 Occasion
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {OCCASIONS.map((occ) => (
+                {occasionOptions.map((occ) => (
                   <label key={occ} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", cursor: "pointer", color: "var(--color-brown-500)", fontFamily: "var(--font-sans)" }}>
                     <input
                       type="checkbox"
@@ -462,8 +535,8 @@ export default function PLPClient({
                 borderRadius: "4px"
               }}>
                 <SlidersHorizontal size={40} style={{ color: "var(--color-gold)", marginBottom: "1rem" }} />
-                <h3 style={{ fontSize: "1.25rem", fontFamily: "var(--font-serif)", color: "var(--color-maroon)", marginBottom: "0.5rem" }}>
-                  No Sarees Match Your Selection
+                <h3 style={{ fontSize: "1.25rem", fontFamily: "var(--font-serif)", color: "var(--color-maroon)", marginBottom: "0.5rem", textTransform: "capitalize" }}>
+                  No {itemNoun} match your selection
                 </h3>
                 <p style={{ fontSize: "0.875rem", color: "var(--color-brown-500)", marginBottom: "1.5rem" }}>
                   Try adjusting your filters or resetting them to view our full collection.
@@ -763,10 +836,11 @@ export default function PLPClient({
             </div>
 
             {/* Fabric */}
+            {showFabricFilter && (
             <div>
               <h4 style={{ fontSize: "0.8125rem", fontWeight: 700, textTransform: "uppercase", color: "var(--color-brown)", marginBottom: "0.5rem" }}>Fabric</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {FABRICS.map((fabric) => (
+                {fabricOptions.map((fabric) => (
                   <label key={fabric} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--color-brown-500)" }}>
                     <input
                       type="checkbox"
@@ -779,12 +853,14 @@ export default function PLPClient({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Colour */}
+            {showColourFilter && (
             <div>
               <h4 style={{ fontSize: "0.8125rem", fontWeight: 700, textTransform: "uppercase", color: "var(--color-brown)", marginBottom: "0.5rem" }}>Colour</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {COLOURS.map((colour) => (
+                {colourOptions.map((colour) => (
                   <label key={colour} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--color-brown-500)" }}>
                     <input
                       type="checkbox"
@@ -797,12 +873,13 @@ export default function PLPClient({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Occasion */}
             <div>
               <h4 style={{ fontSize: "0.8125rem", fontWeight: 700, textTransform: "uppercase", color: "var(--color-brown)", marginBottom: "0.5rem" }}>Occasion</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {OCCASIONS.map((occ) => (
+                {occasionOptions.map((occ) => (
                   <label key={occ} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--color-brown-500)" }}>
                     <input
                       type="checkbox"

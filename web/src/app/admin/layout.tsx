@@ -11,12 +11,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <nav
         style={{
           background: "linear-gradient(90deg, #1a0a0e 0%, #4A0E17 100%)",
-          padding: "0 24px",
+          padding: "0 16px",
           display: "flex",
           alignItems: "center",
-          gap: "32px",
+          gap: "20px",
           height: "52px",
           borderBottom: "1px solid rgba(212,175,55,0.3)",
+          overflowX: "auto",
+          whiteSpace: "nowrap",
+          scrollbarWidth: "none",
         }}
       >
         <span
@@ -26,7 +29,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             fontSize: "0.75rem",
             letterSpacing: "0.2em",
             textTransform: "uppercase",
-            marginRight: "16px",
+            marginRight: "4px",
+            flexShrink: 0,
           }}
         >
           Admin
@@ -35,6 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { label: "Orders", href: "/admin/orders" },
           { label: "Products", href: "/admin/products" },
           { label: "Banners", href: "/admin/banners" },
+          { label: "Media", href: "/admin/media" },
         ].map((link) => (
           <Link
             key={link.href}
@@ -46,6 +51,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               letterSpacing: "0.12em",
               textTransform: "uppercase",
               textDecoration: "none",
+              flexShrink: 0,
             }}
           >
             {link.label}
@@ -55,10 +61,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           href="/"
           style={{
             marginLeft: "auto",
+            paddingLeft: "16px",
             color: "rgba(255,255,255,0.45)",
             fontSize: "0.72rem",
             letterSpacing: "0.1em",
             textDecoration: "none",
+            flexShrink: 0,
           }}
         >
           ← Back to Site

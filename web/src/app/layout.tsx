@@ -1,5 +1,6 @@
 import { Playfair_Display, Inter, Cinzel } from "next/font/google";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -102,8 +103,10 @@ export default async function RootLayout({
           }}
         >
           {adminMode && (
-            <div
+            <Link
+              href="/admin"
               style={{
+                display: "block",
                 background: "linear-gradient(90deg, #1a0a0e 0%, #4A0E17 40%, #1a0a0e 100%)",
                 color: "#D4AF37",
                 textAlign: "center",
@@ -116,10 +119,11 @@ export default async function RootLayout({
                 zIndex: 1000,
                 position: "relative",
                 borderBottom: "1px solid rgba(212,175,55,0.3)",
+                textDecoration: "none",
               }}
             >
-              ✦ Admin Mode Active — Directly Edit Prices, Stock &amp; Products Inline ✦
-            </div>
+              ✦ Admin Mode Active — Open Admin Dashboard ✦
+            </Link>
           )}
           <CartProvider>
             <Navbar />

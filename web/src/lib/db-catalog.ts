@@ -4,6 +4,7 @@
 
 import { prisma, isDbConfigured } from "./prisma";
 import { MOCK_PRODUCTS, MOCK_CATEGORIES, Product, Category } from "./catalog";
+import { slugsForCollection } from "./category-groups";
 
 // Map Prisma product format to catalog format
 const mapPrismaProduct = (p: any): Product => {
@@ -160,13 +161,20 @@ export async function getProducts(params: GetProductsParams = {}): Promise<Produ
       const where: any = { isActive: true };
 
       if (categorySlug) {
-        where.category = { slug: categorySlug };
+        // A parent collection (e.g. "kurta-set") aggregates all of its child
+        // sub-category slugs; a normal slug matches just itself.
+        where.category = { slug: { in: slugsForCollection(categorySlug) } };
       }
       if (fabrics && fabrics.length > 0) {
         where.fabric = { in: fabrics };
       }
       if (colours && colours.length > 0) {
-        where.colour = { in: colours };
+        // Colour is stored as "#hex:Name" (e.g. "#1B4F8A:Royal Blue"), so match the
+        // name portion rather than an exact value.
+        where.AND = [
+          ...(Array.isArray(where.AND) ? where.AND : []),
+          { OR: colours.map((c) => ({ colour: { contains: c, mode: "insensitive" } })) },
+        ];
       }
       if (occasions && occasions.length > 0) {
         where.occasion = { in: occasions };
@@ -220,13 +228,14 @@ export async function getProducts(params: GetProductsParams = {}): Promise<Produ
 
   // Apply filters
   if (categorySlug) {
-    results = results.filter((p) => p.categorySlug === categorySlug);
+    const allowed = slugsForCollection(categorySlug);
+    results = results.filter((p) => p.categorySlug && allowed.includes(p.categorySlug));
   }
   if (fabrics && fabrics.length > 0) {
     results = results.filter((p) => fabrics.includes(p.fabric));
   }
   if (colours && colours.length > 0) {
-    results = results.filter((p) => colours.includes(p.colour));
+    results = results.filter((p) => colours.some((c) => p.colour.toLowerCase().includes(c.toLowerCase())));
   }
   if (occasions && occasions.length > 0) {
     results = results.filter((p) => occasions.includes(p.occasion));
