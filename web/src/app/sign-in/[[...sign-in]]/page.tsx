@@ -12,10 +12,10 @@ export default function SignInPage() {
       style={{
         minHeight: "100vh",
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start",
         justifyContent: "center",
         backgroundColor: "var(--color-ivory)",
-        padding: "2rem 1rem",
+        padding: "2.5rem 1rem 4rem",
         backgroundImage:
           "radial-gradient(ellipse at 70% 20%, rgba(212,175,55,0.06) 0%, transparent 60%), radial-gradient(ellipse at 10% 80%, rgba(74,14,23,0.05) 0%, transparent 50%)",
       }}
