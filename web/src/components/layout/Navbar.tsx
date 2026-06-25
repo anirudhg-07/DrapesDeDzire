@@ -590,10 +590,32 @@ export default function Navbar() {
               {/* Auth */}
               <div className="ml-1 lg:ml-2">
                 <Show when="signed-out">
+                  {/* Mobile: compact account icon (full sign-in lives in the drawer) */}
+                  <SignInButton mode="modal">
+                    <button
+                      aria-label="Sign in"
+                      className="lg-hidden w-8 h-8"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "50%",
+                        border: "none",
+                        background: "none",
+                        cursor: "pointer",
+                        color: "var(--color-brown)",
+                      }}
+                    >
+                      <User size={18} />
+                    </button>
+                  </SignInButton>
+                  {/* Desktop: full text button */}
                   <SignInButton mode="modal">
                     <button
                       id="sign-in-btn"
+                      className="lg-flex"
                       style={{
+                        display: "none",
                         padding: "0.5rem 0.75rem",
                         fontSize: "0.75rem",
                         fontWeight: 600,
