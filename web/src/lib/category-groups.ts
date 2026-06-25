@@ -6,6 +6,8 @@
 // (KURTA_TYPES / JEWELLERY_TYPES) — slugs are lowercase-hyphenated category names.
 
 export const CATEGORY_GROUPS: Record<string, string[]> = {
+  // /collections/sarees shows every saree category
+  "sarees": ["sarees", "kanchipuram-silk", "banarasi-silk", "chanderi", "georgette", "organza", "bridal", "designer"],
   // /collections/kurta-set shows every kurta sub-type
   "kurta-set": ["kurta-set", "anarkali", "straight-cut", "sharara", "palazzo"],
   // /collections/jewellery shows every jewellery type (plural slugs match the navbar;
@@ -15,6 +17,14 @@ export const CATEGORY_GROUPS: Record<string, string[]> = {
 
 // Friendly labels for the sub-category filter chips on a parent page.
 export const CATEGORY_CHILD_LABELS: Record<string, { slug: string; label: string }[]> = {
+  "sarees": [
+    { slug: "kanchipuram-silk", label: "Kanchipuram Silk" },
+    { slug: "banarasi-silk", label: "Banarasi Silk" },
+    { slug: "chanderi", label: "Chanderi" },
+    { slug: "georgette", label: "Georgette" },
+    { slug: "bridal", label: "Bridal" },
+    { slug: "designer", label: "Designer" },
+  ],
   "kurta-set": [
     { slug: "anarkali", label: "Anarkali" },
     { slug: "straight-cut", label: "Straight Cut" },
@@ -41,6 +51,7 @@ export function isParentCollection(slug: string): boolean {
 // Friendly name for a parent collection slug (used when the DB category record
 // doesn't exist yet, e.g. all kurtas live in sub-categories).
 export const PARENT_LABELS: Record<string, string> = {
+  "sarees": "Sarees",
   "kurta-set": "Kurta Sets",
   "jewellery": "Jewellery",
 };
