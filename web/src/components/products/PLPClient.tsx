@@ -31,6 +31,8 @@ interface PLPClientProps {
   availableFabrics?: string[];
   availableColours?: string[];
   availableOccasions?: string[];
+  // Override the "Showing N exquisite ___" noun (e.g. mixed all-products page).
+  itemNoun?: string;
 }
 
 const FABRICS = ["Kanchipuram Silk", "Banarasi Silk", "Chanderi", "Georgette", "Organza"];
@@ -47,6 +49,7 @@ export default function PLPClient({
   availableFabrics,
   availableColours,
   availableOccasions,
+  itemNoun: itemNounProp,
 }: PLPClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -61,7 +64,8 @@ export default function PLPClient({
       : "saree";
 
   const itemNoun =
-    productType === "kurta" ? "kurta sets" : productType === "jewellery" ? "jewellery pieces" : "sarees";
+    itemNounProp ??
+    (productType === "kurta" ? "kurta sets" : productType === "jewellery" ? "jewellery pieces" : "sarees");
 
   // Only show filters relevant to the category:
   //  - Fabric: sarees only (kurtas store "N/A"; jewellery uses type as its category)
@@ -733,7 +737,11 @@ export default function PLPClient({
                           letterSpacing: "0.05em",
                           marginBottom: "0.375rem"
                         }}>
-                          {product.colour.includes(":") ? product.colour.split(":")[1] : product.colour} &middot; {product.occasion}
+                          {(() => {
+                            const cn = product.colour.includes(":") ? product.colour.split(":")[1] : product.colour;
+                            const hasColour = cn && cn.toUpperCase() !== "N/A";
+                            return hasColour ? `${cn} · ${product.occasion}` : product.occasion;
+                          })()}
                         </span>
                         
                         <Link href={`/products/${product.id}`} style={{ textDecoration: "none" }}>

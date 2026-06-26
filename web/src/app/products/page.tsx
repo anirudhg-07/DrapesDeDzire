@@ -32,10 +32,10 @@ export default async function ProductsSearchPage({ searchParams }: PageProps) {
     isAdmin(),
   ]);
 
-  const title = search ? `Search Results for "${search}"` : "All Sarees";
+  const title = search ? `Search Results for "${search}"` : "All Products";
   const desc = search
-    ? `Browse all handloom sarees matching your query. Found ${products.length} matching piece(s).`
-    : "Indulge in our exquisite showcase of traditional masterloom silk sarees, hand-finished by master weavers from Kanchipuram, Varanasi, Chanderi, and across India.";
+    ? `Browse everything matching your query. Found ${products.length} matching piece(s).`
+    : "Explore our complete collection — handwoven sarees, kurta sets and fine jewellery, crafted for every occasion.";
 
   return (
     <PLPClient
@@ -44,6 +44,7 @@ export default async function ProductsSearchPage({ searchParams }: PageProps) {
       categoryTitle={title}
       categoryDescription={desc}
       isAdmin={adminMode}
+      itemNoun="pieces"
     />
   );
 }
