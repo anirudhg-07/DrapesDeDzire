@@ -40,7 +40,7 @@ function getRazorpayInstance() {
 // --------------------------------------------------------------------------
 export async function createOrderAction(
   addressData: AddressInput,
-  items: Array<{ productId: string; quantity: number }>
+  items: Array<{ productId: string; quantity: number; size?: string }>
 ): Promise<{
   success: boolean;
   razorpayOrderId?: string;
@@ -68,20 +68,34 @@ export async function createOrderAction(
         quantity: number;
         priceAtPurchase: number;
         name: string;
+        size: string;
+        hasSizes: boolean;
       }> = [];
 
       for (const item of items) {
+        const size = item.size ?? "";
         const product = await tx.product.findUnique({
           where: { id: item.productId },
-          select: { id: true, name: true, basePrice: true, stock: true, isActive: true },
+          select: {
+            id: true, name: true, basePrice: true, stock: true, isActive: true,
+            productSizes: { select: { size: true, stock: true } },
+          },
         });
 
         if (!product || !product.isActive) {
           throw new Error(`Product not found or unavailable.`);
         }
-        if (product.stock < item.quantity) {
+
+        const hasSizes = product.productSizes.length > 0;
+        if (hasSizes && !size) {
+          throw new Error(`Please select a size for "${product.name}".`);
+        }
+        const availableStock = hasSizes
+          ? product.productSizes.find((s) => s.size === size)?.stock ?? 0
+          : product.stock;
+        if (availableStock < item.quantity) {
           throw new Error(
-            `Insufficient stock for "${product.name}". Only ${product.stock} available.`
+            `Insufficient stock for "${product.name}"${hasSizes ? ` (size ${size})` : ""}. Only ${availableStock} available.`
           );
         }
 
@@ -92,11 +106,20 @@ export async function createOrderAction(
           quantity: item.quantity,
           priceAtPurchase: price,
           name: product.name,
+          size,
+          hasSizes,
         });
       }
 
-      // 2. Decrement stock atomically
+      // 2. Decrement stock atomically (per-size for sized products, plus the
+      //    aggregate product.stock so totals stay consistent)
       for (const item of validatedItems) {
+        if (item.hasSizes) {
+          await tx.productSize.update({
+            where: { productId_size: { productId: item.productId, size: item.size } },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
         await tx.product.update({
           where: { id: item.productId },
           data: { stock: { decrement: item.quantity } },
@@ -134,6 +157,7 @@ export async function createOrderAction(
               productId: item.productId,
               quantity: item.quantity,
               priceAtPurchase: item.priceAtPurchase,
+              size: item.size,
             })),
           },
         },

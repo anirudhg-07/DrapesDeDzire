@@ -89,7 +89,12 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
   };
   const careText = product.careInstructions?.trim() || careDefaults[productLabel];
 
+  // Per-size inventory (kurtas). Empty for sarees/jewellery.
+  const productSizes = product.productSizes ?? [];
+  const hasSizes = productSizes.length > 0;
+
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [selectedSize, setSelectedSize] = useState("");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
@@ -141,9 +146,13 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
       router.push(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
+    if (hasSizes && !selectedSize) {
+      alert("Please select a size.");
+      return;
+    }
     setIsAddingToCart(true);
     try {
-      const res = await addItem(product.id, 1);
+      const res = await addItem(product.id, 1, selectedSize);
       if (!res.success && res.error) {
         alert(res.error);
       }
@@ -160,9 +169,13 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
       router.push(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
+    if (hasSizes && !selectedSize) {
+      alert("Please select a size.");
+      return;
+    }
     setIsAddingToCart(true);
     try {
-      const res = await addItem(product.id, 1);
+      const res = await addItem(product.id, 1, selectedSize);
       if (res.success) {
         router.push("/checkout");
       } else if (res.error) {
@@ -563,6 +576,54 @@ export default function PDPClient({ product, relatedProducts, variants = [], isA
                 />
                 <span>Saree is Active (visible to customers)</span>
               </label>
+            )}
+
+            {/* Size selector — kurtas (and any sized product) */}
+            {!isEditing && hasSizes && (
+              <div style={{ marginBottom: "0.25rem" }}>
+                <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--color-brown-300)", marginBottom: "0.6rem", fontFamily: "var(--font-sans)" }}>
+                  Select Size
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+                  {productSizes.map((s) => {
+                    const out = s.stock <= 0;
+                    const active = selectedSize === s.size;
+                    return (
+                      <button
+                        key={s.size}
+                        type="button"
+                        disabled={out}
+                        onClick={() => setSelectedSize(s.size)}
+                        style={{
+                          minWidth: "3rem",
+                          padding: "0.6rem 0.9rem",
+                          borderRadius: "4px",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          fontFamily: "var(--font-sans)",
+                          cursor: out ? "not-allowed" : "pointer",
+                          border: `1px solid ${active ? "var(--color-maroon)" : "var(--color-cream-200)"}`,
+                          backgroundColor: active ? "var(--color-maroon)" : "transparent",
+                          color: out ? "var(--color-brown-300)" : active ? "var(--color-ivory)" : "var(--color-brown)",
+                          textDecoration: out ? "line-through" : "none",
+                          opacity: out ? 0.55 : 1,
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        {s.size}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedSize && (() => {
+                  const st = productSizes.find((s) => s.size === selectedSize)?.stock ?? 0;
+                  return st > 0 && st <= 5 ? (
+                    <p style={{ fontSize: "0.78rem", color: "var(--color-gold-600)", marginTop: "0.5rem", fontFamily: "var(--font-sans)" }}>
+                      Only {st} left in {selectedSize}
+                    </p>
+                  ) : null;
+                })()}
+              </div>
             )}
 
             {/* Call To Actions — hidden in edit mode */}

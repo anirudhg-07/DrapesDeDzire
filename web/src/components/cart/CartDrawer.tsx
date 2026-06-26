@@ -285,7 +285,7 @@ export default function CartDrawer() {
                         letterSpacing: "0.04em",
                       }}
                     >
-                      {item.product.fabric} · {item.product.colour}
+                      {item.size ? `Size: ${item.size}` : `${item.product.fabric} · ${item.product.colour}`}
                     </p>
 
                     {/* Quantity Controls */}
@@ -300,7 +300,7 @@ export default function CartDrawer() {
                       }}
                     >
                       <button
-                        onClick={() => updateQty(item.productId, item.quantity - 1)}
+                        onClick={() => updateQty(item.productId, item.quantity - 1, item.size)}
                         disabled={isLoading}
                         aria-label="Decrease quantity"
                         style={{
@@ -332,7 +332,7 @@ export default function CartDrawer() {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQty(item.productId, item.quantity + 1)}
+                        onClick={() => updateQty(item.productId, item.quantity + 1, item.size)}
                         disabled={isLoading || item.quantity >= item.product.stock}
                         aria-label="Increase quantity"
                         style={{
@@ -372,7 +372,7 @@ export default function CartDrawer() {
                         {formatPrice(item.product.basePrice * item.quantity)}
                       </span>
                       <button
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => removeItem(item.productId, item.size)}
                         disabled={isLoading}
                         aria-label="Remove item"
                         style={{

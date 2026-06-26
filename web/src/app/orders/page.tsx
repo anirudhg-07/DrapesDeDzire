@@ -100,7 +100,7 @@ export default async function OrdersPage() {
                             {item.product.name}
                           </Link>
                           <p style={{ fontSize: "0.8rem", color: "var(--color-brown-300)", margin: "3px 0 0", fontFamily: "var(--font-sans)" }}>
-                            Qty {item.quantity} · {inr(item.priceAtPurchase)}
+                            Qty {item.quantity}{item.size ? ` · Size ${item.size}` : ""} · {inr(item.priceAtPurchase)}
                           </p>
                         </div>
                       </div>

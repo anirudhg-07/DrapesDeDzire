@@ -240,7 +240,7 @@ export default async function AdminOrderDetailPage({
                     {item.product.name}
                   </p>
                   <p style={{ margin: 0, color: "#a08070", fontSize: "0.78rem" }}>
-                    Qty: {item.quantity}
+                    Qty: {item.quantity}{item.size ? ` · Size: ${item.size}` : ""}
                   </p>
                 </div>
                 <p style={{ margin: 0, fontWeight: 700, color: "#1a0a0e", fontSize: "0.88rem", whiteSpace: "nowrap" }}>

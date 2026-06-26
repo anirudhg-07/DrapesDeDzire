@@ -67,6 +67,7 @@ export default function CheckoutClient({ customerName, customerEmail }: Checkout
       const orderItems = items.map((i) => ({
         productId: i.productId,
         quantity: i.quantity,
+        size: i.size,
       }));
 
       const result = await createOrderAction(address, orderItems);

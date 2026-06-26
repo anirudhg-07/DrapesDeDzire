@@ -22,6 +22,7 @@ export interface CartItemWithProduct {
   id: string;
   userId: string;
   productId: string;
+  size: string; // "" for products without sizes
   quantity: number;
   createdAt: Date;
   product: CartProduct;

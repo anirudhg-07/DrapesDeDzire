@@ -12,6 +12,8 @@ const OCCASIONS = ["Bridal", "Festive", "Designer", "Casual", "Party Wear"];
 const JEWELLERY_TYPES = ["Necklaces", "Earrings", "Bangles", "Rings", "Pendants", "Sets"];
 // Kurta sub-categories — these map to /collections/<slug> (e.g. /collections/anarkali)
 const KURTA_TYPES = ["Anarkali", "Straight Cut", "Sharara"];
+// Sizes offered for kurta sets (admin sets per-size stock)
+const KURTA_SIZES = ["S", "M", "L", "XL", "XXL", "Free Size"];
 
 interface UploadedImage {
   url: string;
@@ -71,18 +73,35 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
   }));
   const [variants, setVariants] = useState<ColorVariant[]>([createDefaultVariant()]);
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+  // Per-size stock for kurta sets: list of { size, stock } rows
+  const [sizeStocks, setSizeStocks] = useState<{ size: string; stock: string }[]>([
+    { size: "M", stock: "10" },
+  ]);
 
   // Update form name when defaultCategory changes
   React.useEffect(() => {
     if (defaultCategory && isOpen) {
-      setForm(prev => ({ 
-        ...prev, 
+      setForm(prev => ({
+        ...prev,
         name: `New ${defaultCategory}`,
         fabric: defaultFabricFor(defaultCategory),
         careInstructions: defaultCareFor(defaultCategory),
       }));
+      setSizeStocks([{ size: "M", stock: "10" }]);
     }
   }, [defaultCategory, isOpen]);
+
+  const addSizeRow = () => {
+    const used = new Set(sizeStocks.map((s) => s.size));
+    const next = KURTA_SIZES.find((s) => !used.has(s)) || "Free Size";
+    setSizeStocks((prev) => [...prev, { size: next, stock: "0" }]);
+  };
+  const updateSizeRow = (idx: number, field: "size" | "stock", value: string) => {
+    setSizeStocks((prev) => prev.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
+  };
+  const removeSizeRow = (idx: number) => {
+    setSizeStocks((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
+  };
 
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -173,11 +192,23 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
 
     if (!form.name.trim()) return setError("Product name is required.");
     if (!form.basePrice || isNaN(Number(form.basePrice))) return setError("Valid price is required.");
-    
+
     for (const v of variants) {
       if (v.images.length === 0) {
         return setError(`Please upload at least one image for color: ${v.colour.split(":")[1] || "Unknown"}`);
       }
+    }
+
+    // Kurta sizes: dedupe by size, keep only valid rows; require at least one
+    let kurtaSizes: { size: string; stock: number }[] = [];
+    if (defaultCategory === "Kurta Set") {
+      const seen = new Set<string>();
+      for (const row of sizeStocks) {
+        if (seen.has(row.size)) return setError(`Duplicate size "${row.size}". Each size once.`);
+        seen.add(row.size);
+        kurtaSizes.push({ size: row.size, stock: Number(row.stock) || 0 });
+      }
+      if (kurtaSizes.length === 0) return setError("Add at least one size for the kurta set.");
     }
 
     setIsSaving(true);
@@ -195,6 +226,12 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
       const productTypeValue =
         defaultCategory === "Kurta Set" || defaultCategory === "Jewellery" ? form.fabric : defaultCategory;
 
+      // For kurtas, total stock is the sum of per-size stock
+      const stockValue =
+        defaultCategory === "Kurta Set"
+          ? kurtaSizes.reduce((sum, s) => sum + s.stock, 0)
+          : Number(v.stock) || 0;
+
       const res = await createProductAction({
         name: form.name,
         description: form.description,
@@ -202,12 +239,13 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
         fabric: fabricValue,
         colour: colourValue, // Saved as "#HEX:Name"
         occasion: form.occasion,
-        stock: Number(v.stock) || 0,
+        stock: stockValue,
         careInstructions: form.careInstructions,
         deliveryInfo: form.deliveryInfo,
         returnPolicy: form.returnPolicy,
         variantGroupId,
         productType: productTypeValue,
+        sizes: defaultCategory === "Kurta Set" ? kurtaSizes : undefined,
         images: v.images.map((img, idx) => ({ url: img.url, publicId: img.publicId, isPrimary: idx === 0 })),
       });
 
@@ -416,10 +454,49 @@ export default function AddSareeDrawer({ isOpen, onClose, onCreated, defaultCate
                     </div>
                   </div>
                 )}
-                <div>
-                  <label style={labelStyle}>Stock</label>
-                  <input type="number" min="0" style={inputStyle} value={activeVariant.stock} onChange={(e) => handleVariantField("stock", e.target.value)} />
-                </div>
+                {defaultCategory === "Kurta Set" ? (
+                  <div>
+                    <label style={labelStyle}>Sizes & Stock</label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {sizeStocks.map((row, idx) => (
+                        <div key={idx} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                          <select
+                            style={{ ...inputStyle, flex: 1 }}
+                            value={row.size}
+                            onChange={(e) => updateSizeRow(idx, "size", e.target.value)}
+                          >
+                            {KURTA_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                          <input
+                            type="number"
+                            min="0"
+                            style={{ ...inputStyle, width: "90px" }}
+                            value={row.stock}
+                            placeholder="Stock"
+                            onChange={(e) => updateSizeRow(idx, "stock", e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeSizeRow(idx)}
+                            disabled={sizeStocks.length <= 1}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "#c0392b", padding: "4px", display: "flex", alignItems: "center", opacity: sizeStocks.length <= 1 ? 0.4 : 1 }}
+                            title="Remove size"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" onClick={addSizeRow} style={{ marginTop: "8px", fontSize: "0.78rem", color: "#4A0E17", background: "none", border: "1px dashed rgba(74,14,23,0.3)", borderRadius: "4px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <Plus size={14} /> Add size
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label style={labelStyle}>Stock</label>
+                    <input type="number" min="0" style={inputStyle} value={activeVariant.stock} onChange={(e) => handleVariantField("stock", e.target.value)} />
+                  </div>
+                )}
               </div>
 
               {/* Image Upload for Active Variant */}

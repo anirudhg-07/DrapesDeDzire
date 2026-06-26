@@ -90,6 +90,7 @@ export async function createProductAction(data: {
   returnPolicy?: string;
   variantGroupId?: string;
   productType?: string; // e.g. "Kurta Set", "Jewellery", "Saree"
+  sizes?: Array<{ size: string; stock: number }>; // per-size stock (kurtas)
   images: Array<{ url: string; publicId: string; isPrimary: boolean }>;
 }): Promise<{ success: boolean; productId?: string; error?: string }> {
   if (!isDbConfigured()) return { success: false, error: "Database not configured." };
@@ -149,6 +150,16 @@ export async function createProductAction(data: {
             orderNum: idx,
           })),
         },
+        // Per-size inventory (kurtas) — dedupe by size
+        ...(data.sizes && data.sizes.length > 0
+          ? {
+              productSizes: {
+                create: Array.from(
+                  new Map(data.sizes.map((s) => [s.size, s])).values()
+                ).map((s) => ({ size: s.size, stock: s.stock })),
+              },
+            }
+          : {}),
       },
     });
 

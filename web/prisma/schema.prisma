@@ -84,6 +84,7 @@ model Product {
   cartItems        CartItem[]
   reviews          Review[]
   orderItems       OrderItem[]
+  productSizes     ProductSize[]
 
   // Indexes for high-performance faceted filtering
   @@index([categoryId])
@@ -93,6 +94,22 @@ model Product {
   @@index([basePrice])
   @@index([isActive])
   @@index([variantGroupId])
+}
+
+// Per-size inventory for products that come in sizes (e.g. kurta sets).
+// Products without sizes (sarees, jewellery) simply have no ProductSize rows.
+model ProductSize {
+  id        String   @id @default(uuid())
+  productId String
+  size      String   // e.g. "S", "M", "L", "XL", "XXL", "Free Size"
+  stock     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, size])
+  @@index([productId])
 }
 
 model ProductImage {
@@ -154,6 +171,7 @@ model CartItem {
   id        String   @id @default(uuid())
   userId    String
   productId String
+  size      String   @default("") // "" for products without sizes (sarees/jewellery)
   quantity  Int      @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -162,8 +180,8 @@ model CartItem {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  // A user cannot have the same product in cart twice (quantity handles multiples)
-  @@unique([userId, productId])
+  // Same product can appear once per size (quantity handles multiples)
+  @@unique([userId, productId, size])
   @@index([userId])
 }
 
@@ -233,6 +251,7 @@ model OrderItem {
   id              String   @id @default(uuid())
   orderId         String
   productId       String
+  size            String   @default("") // Selected size at purchase ("" if not sized)
   quantity        Int      @default(1)
   priceAtPurchase Decimal  @db.Decimal(10, 2) // Snapshotted price at time of purchase
   createdAt       DateTime @default(now())

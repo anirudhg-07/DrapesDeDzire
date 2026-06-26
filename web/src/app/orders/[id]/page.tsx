@@ -124,7 +124,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       {item.product.name}
                     </Link>
                     <p style={{ fontSize: "0.8rem", color: "var(--color-brown-300)", margin: "3px 0 0", fontFamily: "var(--font-sans)" }}>
-                      Qty {item.quantity}
+                      Qty {item.quantity}{item.size ? ` · Size ${item.size}` : ""}
                     </p>
                   </div>
                   <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--color-brown)", fontFamily: "var(--font-sans)", whiteSpace: "nowrap" }}>

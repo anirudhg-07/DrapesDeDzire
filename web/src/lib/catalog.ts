@@ -29,6 +29,7 @@ export interface Product {
   categorySlug?: string;
   variantGroupId?: string | null;
   images: ProductImage[];
+  productSizes?: { size: string; stock: number }[];
 }
 
 export interface Category {

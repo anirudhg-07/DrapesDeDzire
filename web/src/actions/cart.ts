@@ -13,7 +13,8 @@ import type { CartItemWithProduct } from "@/types/cart";
 // --------------------------------------------------------------------------
 export async function addToCartAction(
   productId: string,
-  quantity = 1
+  quantity = 1,
+  size = ""
 ): Promise<{ success: boolean; error?: string }> {
   if (!isDbConfigured()) {
     return { success: false, error: "Database not configured." };
@@ -23,33 +24,37 @@ export async function addToCartAction(
     const clerkId = await requireAuth();
     const userId = await getOrCreateDbUser(clerkId);
 
-    // Check stock availability
+    // Load product + its per-size inventory (if any)
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { stock: true, name: true },
+      select: { stock: true, name: true, productSizes: { select: { size: true, stock: true } } },
     });
-    if (!product || product.stock < quantity) {
-      return { success: false, error: `Insufficient stock for this item.` };
+    if (!product) return { success: false, error: "Product not found." };
+
+    const hasSizes = product.productSizes.length > 0;
+    if (hasSizes && !size) {
+      return { success: false, error: "Please select a size." };
+    }
+    // Available stock for this specific size (or product-level if not sized)
+    const availableStock = hasSizes
+      ? product.productSizes.find((s) => s.size === size)?.stock ?? 0
+      : product.stock;
+
+    if (availableStock < quantity) {
+      return { success: false, error: "Insufficient stock for this size." };
     }
 
-    // Check if item already in cart
-    const existing = await prisma.cartItem.findUnique({
-      where: { userId_productId: { userId, productId } },
-    });
+    const key = { userId_productId_size: { userId, productId, size } };
+    const existing = await prisma.cartItem.findUnique({ where: key });
 
     if (existing) {
       const newQty = existing.quantity + quantity;
-      if (newQty > product.stock) {
+      if (newQty > availableStock) {
         return { success: false, error: "Cannot add more — insufficient stock." };
       }
-      await prisma.cartItem.update({
-        where: { userId_productId: { userId, productId } },
-        data: { quantity: newQty },
-      });
+      await prisma.cartItem.update({ where: key, data: { quantity: newQty } });
     } else {
-      await prisma.cartItem.create({
-        data: { userId, productId, quantity },
-      });
+      await prisma.cartItem.create({ data: { userId, productId, size, quantity } });
     }
 
     revalidatePath("/cart");
@@ -65,7 +70,8 @@ export async function addToCartAction(
 // Remove from Cart
 // --------------------------------------------------------------------------
 export async function removeFromCartAction(
-  productId: string
+  productId: string,
+  size = ""
 ): Promise<{ success: boolean; error?: string }> {
   if (!isDbConfigured()) return { success: false, error: "Database not configured." };
 
@@ -74,7 +80,7 @@ export async function removeFromCartAction(
     const userId = await getOrCreateDbUser(clerkId);
 
     await prisma.cartItem.deleteMany({
-      where: { userId, productId },
+      where: { userId, productId, size },
     });
 
     revalidatePath("/cart");
@@ -90,10 +96,11 @@ export async function removeFromCartAction(
 // --------------------------------------------------------------------------
 export async function updateCartQuantityAction(
   productId: string,
-  quantity: number
+  quantity: number,
+  size = ""
 ): Promise<{ success: boolean; error?: string }> {
   if (!isDbConfigured()) return { success: false, error: "Database not configured." };
-  if (quantity < 1) return removeFromCartAction(productId);
+  if (quantity < 1) return removeFromCartAction(productId, size);
 
   try {
     const clerkId = await requireAuth();
@@ -101,14 +108,20 @@ export async function updateCartQuantityAction(
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { stock: true },
+      select: { stock: true, productSizes: { select: { size: true, stock: true } } },
     });
-    if (!product || product.stock < quantity) {
+    if (!product) return { success: false, error: "Product not found." };
+
+    const hasSizes = product.productSizes.length > 0;
+    const availableStock = hasSizes
+      ? product.productSizes.find((s) => s.size === size)?.stock ?? 0
+      : product.stock;
+    if (availableStock < quantity) {
       return { success: false, error: "Insufficient stock." };
     }
 
     await prisma.cartItem.update({
-      where: { userId_productId: { userId, productId } },
+      where: { userId_productId_size: { userId, productId, size } },
       data: { quantity },
     });
 
@@ -143,35 +156,44 @@ export async function getCartAction(): Promise<{
         product: {
           include: {
             images: { orderBy: { orderNum: "asc" } },
+            productSizes: { select: { size: true, stock: true } },
           },
         },
       },
       orderBy: { createdAt: "asc" },
     });
 
-    const items: CartItemWithProduct[] = rawItems.map((item) => ({
-      id: item.id,
-      userId: item.userId,
-      productId: item.productId,
-      quantity: item.quantity,
-      createdAt: item.createdAt,
-      product: {
-        id: item.product.id,
-        name: item.product.name,
-        slug: item.product.slug,
-        basePrice: Number(item.product.basePrice),
-        fabric: item.product.fabric,
-        colour: item.product.colour,
-        stock: item.product.stock,
-        categorySlug: undefined,
-        images: item.product.images.map((img) => ({
-          id: img.id,
-          imageUrl: img.imageUrl,
-          isPrimary: img.isPrimary,
-          orderNum: img.orderNum,
-        })),
-      },
-    }));
+    const items: CartItemWithProduct[] = rawItems.map((item) => {
+      // Effective stock for this line = the selected size's stock if sized.
+      const hasSizes = item.product.productSizes.length > 0;
+      const effectiveStock = hasSizes
+        ? item.product.productSizes.find((s) => s.size === item.size)?.stock ?? 0
+        : item.product.stock;
+      return {
+        id: item.id,
+        userId: item.userId,
+        productId: item.productId,
+        size: item.size,
+        quantity: item.quantity,
+        createdAt: item.createdAt,
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          slug: item.product.slug,
+          basePrice: Number(item.product.basePrice),
+          fabric: item.product.fabric,
+          colour: item.product.colour,
+          stock: effectiveStock,
+          categorySlug: undefined,
+          images: item.product.images.map((img) => ({
+            id: img.id,
+            imageUrl: img.imageUrl,
+            isPrimary: img.isPrimary,
+            orderNum: img.orderNum,
+          })),
+        },
+      };
+    });
 
     const subtotal = items.reduce(
       (sum, item) => sum + item.product.basePrice * item.quantity,

@@ -33,6 +33,7 @@ const mapPrismaProduct = (p: any): Product => {
       isPrimary: img.isPrimary,
       orderNum: img.orderNum,
     })),
+    productSizes: (p.productSizes || []).map((s: any) => ({ size: s.size, stock: s.stock })),
   };
 };
 
@@ -283,6 +284,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
             orderBy: { orderNum: "asc" },
           },
           category: true,
+          productSizes: { orderBy: { size: "asc" } },
         },
       });
       if (dbProduct) return mapPrismaProduct(dbProduct);
@@ -304,6 +306,7 @@ export async function getProductById(id: string): Promise<Product | null> {
             orderBy: { orderNum: "asc" },
           },
           category: true,
+          productSizes: { orderBy: { size: "asc" } },
         },
       });
       if (dbProduct) return mapPrismaProduct(dbProduct);
